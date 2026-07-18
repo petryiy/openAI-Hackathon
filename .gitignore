@@ -22,3 +22,9 @@ coverage/
 .DS_Store
 .idea/
 .vscode/
+
+# jetbrains
+*.iml
+
+# others
+temp/
