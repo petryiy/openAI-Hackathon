@@ -1,8 +1,19 @@
 import { NextResponse } from "next/server";
-import { generateEpisodeSpec, ModelConfigurationError } from "@/lib/ai/provider";
+import {
+  classifyGenerationError,
+  generateEpisodeSpec,
+  getSafeModelError,
+} from "@/lib/ai/provider";
 import { MOONBASE_EPISODE_ID } from "@/lib/episode/moonbase";
+import { repairGeneratedEpisode } from "@/lib/episode/repair";
+import { processingJobView } from "@/lib/jobs/progress";
 import { PIPELINE_STAGES, type GenerationJob } from "@/lib/jobs/schema";
-import { readJob, saveEpisode, saveJob } from "@/lib/storage/local-store";
+import {
+  readJob,
+  saveEpisode,
+  saveEpisodeDraft,
+  saveJob,
+} from "@/lib/storage/local-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -37,7 +48,7 @@ export async function GET(
     return NextResponse.json(existing);
   }
   if (existing.status === "processing") {
-    return NextResponse.json(existing);
+    return NextResponse.json(processingJobView(existing));
   }
 
   const elapsed = Date.now() - Date.parse(existing.createdAt);
@@ -88,15 +99,18 @@ export async function GET(
     return NextResponse.json(failed);
   }
 
+  const processingStartedAt = new Date().toISOString();
   const processing: GenerationJob = {
     ...existing,
     status: "processing",
     stageIndex: 4,
     progress: 76,
-    updatedAt: new Date().toISOString(),
+    processingStartedAt,
+    updatedAt: processingStartedAt,
   };
   await saveJob(processing);
 
+  let draftId: string | undefined;
   try {
     const generated = await generateEpisodeSpec({
       sourceInput: existing.sourceInput,
@@ -105,14 +119,23 @@ export async function GET(
       genre: existing.genre,
       language: existing.language,
     });
-    const episode = await saveEpisode({ ...generated, id: `episode-${existing.id}` });
+    const generatedWithId = { ...generated, id: `episode-${existing.id}` };
+    const draft = await saveEpisodeDraft(generatedWithId);
+    draftId = draft.id;
+    const repaired = repairGeneratedEpisode(draft);
+    const episode = await saveEpisode(repaired.episode);
+    const completedAt = new Date().toISOString();
     const complete: GenerationJob = {
       ...processing,
       status: "complete",
       stageIndex: 5,
       progress: 100,
+      draftId,
+      repairHistory: repaired.repairs,
       episodeId: episode.id,
-      updatedAt: new Date().toISOString(),
+      generationDurationMs:
+        Date.parse(completedAt) - Date.parse(processingStartedAt),
+      updatedAt: completedAt,
       stageHistory: PIPELINE_STAGES.map((stage) => ({
         stage,
         status: "complete" as const,
@@ -122,18 +145,20 @@ export async function GET(
     await saveJob(complete);
     return NextResponse.json(complete);
   } catch (error) {
-    const configurationError = error instanceof ModelConfigurationError;
+    console.error(
+      "Episode generation failed",
+      JSON.stringify(getSafeModelError(error)),
+    );
+    const publicError = classifyGenerationError(error);
     const failed: GenerationJob = {
       ...processing,
       status: "error",
+      stageIndex: draftId ? 5 : processing.stageIndex,
+      progress: draftId ? 94 : processing.progress,
+      draftId,
+      generationDurationMs: Date.now() - Date.parse(processingStartedAt),
       updatedAt: new Date().toISOString(),
-      error: {
-        code: configurationError ? error.code : "GENERATION_FAILED",
-        message: configurationError
-          ? error.message
-          : "The episode did not pass structured validation. Refine the source question and retry.",
-        recoverable: true,
-      },
+      error: publicError,
     };
     await saveJob(failed);
     return NextResponse.json(failed);

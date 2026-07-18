@@ -25,6 +25,12 @@ export const GenerationJobSchema = z.object({
   stageHistory: z.array(
     z.object({ stage: z.string(), status: z.enum(["complete", "active"]), at: z.string() }),
   ),
+  processingStartedAt: z.string().optional(),
+  generationDurationMs: z.number().int().nonnegative().optional(),
+  draftId: z.string().optional(),
+  repairHistory: z
+    .array(z.object({ code: z.string(), message: z.string() }))
+    .optional(),
   episodeId: z.string().optional(),
   error: z
     .object({

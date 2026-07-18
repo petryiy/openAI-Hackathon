@@ -12,6 +12,8 @@ export function GenerationClient() {
   const [job, setJob] = useState<GenerationJob | null>(null);
   const [episode, setEpisode] = useState<EpisodeSpec | null>(null);
   const [networkError, setNetworkError] = useState("");
+  const [repairing, setRepairing] = useState(false);
+  const [repairError, setRepairError] = useState("");
 
   const poll = useCallback(async () => {
     if (!jobId) return;
@@ -39,6 +41,33 @@ export function GenerationClient() {
       window.clearInterval(timer);
     };
   }, [job?.status, poll]);
+
+  async function repairDraft() {
+    if (!jobId) return;
+    setRepairing(true);
+    setRepairError("");
+    try {
+      const response = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/repair`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error?.message ?? "The saved draft could not be repaired.");
+      }
+      setJob(data);
+      if (data.episodeId) {
+        const episodeResponse = await fetch(
+          `/api/episodes/${encodeURIComponent(data.episodeId)}`,
+        );
+        const episodeData = await episodeResponse.json();
+        if (episodeResponse.ok) setEpisode(episodeData.episode);
+      }
+    } catch (error) {
+      setRepairError((error as Error).message);
+    } finally {
+      setRepairing(false);
+    }
+  }
 
   if (!jobId) {
     return <GenerationError message="No generation job was supplied." />;
@@ -79,11 +108,25 @@ export function GenerationClient() {
         {job?.status === "error" ? (
           <div className="generation-error-card">
             <span className="error-symbol">!</span>
-            <p className="eyebrow">Recoverable pause</p>
-            <h2>The creative pipeline is ready; the model connection is not.</h2>
+            <p className="eyebrow">
+              {job.error?.recoverable ? "Recoverable pause" : "Integration pause"}
+            </p>
+            <h2>{generationErrorHeading(job.error?.code)}</h2>
             <p>{job.error?.message}</p>
+            {repairError ? <p role="alert">{repairError}</p> : null}
             <div className="button-row">
+              {job.error?.code === "EPISODE_VALIDATION_FAILED" && job.draftId ? (
+                <button
+                  className="primary-button"
+                  type="button"
+                  disabled={repairing}
+                  onClick={repairDraft}
+                >
+                  {repairing ? "Repairing saved draft…" : "Repair saved draft →"}
+                </button>
+              ) : (
               <Link className="primary-button" href="/episode/moonbase-last-shot">Play offline Moonbase demo →</Link>
+              )}
               <Link className="text-button" href="/">Use a different source</Link>
             </div>
           </div>
@@ -95,6 +138,24 @@ export function GenerationClient() {
       </div>
     </section>
   );
+}
+
+function generationErrorHeading(code?: string) {
+  switch (code) {
+    case "OPENAI_QUOTA_EXHAUSTED":
+      return "The API project needs available quota.";
+    case "OPENAI_RATE_LIMITED":
+      return "The director is at capacity.";
+    case "OPENAI_AUTH_FAILED":
+    case "OPENAI_API_KEY_REQUIRED":
+      return "The model connection needs attention.";
+    case "OPENAI_MODEL_ACCESS_DENIED":
+      return "This project cannot access the selected model.";
+    case "EPISODE_VALIDATION_FAILED":
+      return "This draft did not pass the teaching gate.";
+    default:
+      return "Generation paused before publication.";
+  }
 }
 
 function Blueprint({ episode }: { episode: EpisodeSpec }) {
@@ -125,7 +186,7 @@ function Blueprint({ episode }: { episode: EpisodeSpec }) {
           <article key={choice.id}>
             <span>Decision {index + 1}</span>
             <p>{choice.prompt}</p>
-            <small>{index === 0 ? "Diagnoses component independence" : "Changes gravity to test transfer"}</small>
+            <small>{index === 0 ? "Diagnoses the learner's starting model" : "Changes one condition to test adaptation"}</small>
           </article>
         ))}
       </div>
@@ -134,7 +195,7 @@ function Blueprint({ episode }: { episode: EpisodeSpec }) {
         <p><strong>Plot as Proof</strong>{episode.storyBible.runningGag}</p>
       </div>
       <Link className="primary-button blueprint-cta" href={`/episode/${episode.id}`}>
-        Enter the cockpit <span aria-hidden="true">→</span>
+        Enter the episode <span aria-hidden="true">→</span>
       </Link>
     </div>
   );

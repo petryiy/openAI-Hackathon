@@ -23,7 +23,10 @@ The product name is intentionally still a working title. **Moonbase Last Shot** 
 - cautious evidence recap instead of a mastery claim;
 - browser-local TTS fallback, captions, keyboard focus, and reduced-motion support;
 - server-only GPT-5.6 Responses API integration with structured Zod output;
-- recoverable no-key and generation-error states;
+- server-planned shots, saved failed drafts, and bounded one-click local repair;
+- a successful GPT-5.6-generated Chinese probability episode with dynamic story staging;
+- deterministic 1000-unit grids, 2×2 conditional tables, and probability trees driven by visualization specs;
+- actionable no-key, auth, quota, rate-limit, model-access, schema, and quality-gate states;
 - local job/episode persistence behind a storage adapter;
 - automated adaptation, schema, reconvergence, visualization, and quality-gate tests.
 
@@ -38,13 +41,13 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000). The default projectile-motion sample runs end to end with no external services.
 
-To enable new-topic generation later:
+To enable new-topic generation:
 
 ```bash
 cp .env.example .env.local
 ```
 
-Then add `OPENAI_API_KEY` to `.env.local` and restart the server. Never expose it as a `NEXT_PUBLIC_` variable or commit it. The default `OPENAI_MODEL` is `gpt-5.6`, the GPT-5.6 Sol alias documented by OpenAI.
+Then add `OPENAI_API_KEY` to `.env.local` and restart the server. Never expose it as a `NEXT_PUBLIC_` variable or commit it. The default model is `gpt-5.6`, with low reasoning and a four-minute request bound for the interactive path.
 
 ## Verification
 
@@ -57,13 +60,14 @@ pnpm build
 
 Current verified baseline:
 
-- 8 tests pass;
+- 21 tests pass;
 - TypeScript passes with strict mode;
 - ESLint passes;
 - Next.js production build succeeds;
 - browser QA passes at 1440×900 and 390×844;
 - full confident-error → remediation → changed-condition → transfer → recap path passes;
-- unsupported topics without a key reach a clear, recoverable pause.
+- unsupported topics without a key reach a clear, recoverable pause;
+- a real Chinese probability episode completes through GPT-5.6 in 85 seconds, publishes after recorded local repair, and plays through transfer and recap.
 
 ## Demo flow
 
@@ -86,7 +90,11 @@ Create form
 GenerationJob ── GET /api/jobs/:id ──► stages / blueprint / recoverable error
    │
    ├─ known demo concept ─► seeded validated EpisodeSpec
-   └─ API key present ────► GPT-5.6 Responses API ─► Zod validation
+   └─ API key present ────► GPT-5.6 Responses API ─► EpisodeDraft
+                                                     │ deterministic shots
+                                                     │ saved + repaired draft
+                                                     ▼
+                                              EpisodeSpec validation
                                                      │
 Episode player ◄── GET /api/episodes/:id ◄───────────┘
    │
@@ -99,7 +107,10 @@ Important locations:
 - `lib/episode/schema.ts` — shared Zod/TypeScript contracts;
 - `lib/episode/moonbase.ts` — release-blocking seeded episode;
 - `lib/adaptation/engine.ts` — deterministic runtime policy;
-- `lib/ai/provider.ts` — server-only structured GPT-5.6 integration;
+- `lib/ai/provider.ts` — server-only structured GPT-5.6 integration and error classification;
+- `lib/ai/schema.ts` — Structured Outputs-compatible model boundary and EpisodeSpec conversion;
+- `lib/episode/shot-planner.ts` and `repair.ts` — deterministic publication boundary;
+- `components/player/concept-visual.tsx` — spec-driven deterministic teaching visuals;
 - `components/player/` — fixed cinematic shell and deterministic visuals;
 - `app/api/` — minimum server contract;
 - `tests/` and `evals/` — regression safety and product-quality baselines.
@@ -108,7 +119,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for boundaries and [`PRODUCT_
 
 ## How GPT-5.6 and Codex are used
 
-GPT-5.6 is the content-planning provider for new questions. It returns a structured `EpisodeSpec` through the Responses API; the server validates that data before the fixed UI can render it. Runtime branching remains deterministic so the demo never points to a nonexistent scene or exposes hidden reasoning. Official references: [GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol) and [Models](https://developers.openai.com/api/docs/models).
+GPT-5.6 is the content-planning provider for new questions. It returns a structured `EpisodeDraft` through the Responses API; the server plans shots, saves a repairable draft, applies bounded recorded repairs, and validates the final `EpisodeSpec` before the fixed UI can render it. Runtime branching remains deterministic so the demo never points to a nonexistent scene or exposes hidden reasoning. Official references: [GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol) and [Models](https://developers.openai.com/api/docs/models).
 
 Codex was used as the primary product-engineering collaborator for specification synthesis, architecture, UI implementation, adaptation logic, test creation, production-build repair, and browser QA. The repository’s `AGENTS.md`, decision log, state file, evals, and PR template make those improvements durable across both teammates’ future Codex tasks.
 
@@ -123,10 +134,9 @@ Codex was used as the primary product-engineering collaborator for specification
 
 ## Deliberate hackathon limitations
 
-- `OPENAI_API_KEY` is not configured, so live structured generation has not yet been smoke-tested.
 - Optional PDF/image extraction is represented in the UI but is not wired into the first vertical slice; pasted text is the supported path.
 - Browser speech synthesis is a development fallback, not production character audio.
-- SVG provides the deterministic visual baseline; the isolated Manim worker remains a follow-up adapter.
+- SVG provides deterministic projectile and probability visual families; other concepts currently use a structured-diagram fallback, and the isolated Manim worker remains a follow-up adapter.
 - Local filesystem storage is not suitable for multi-instance production deployment.
 - Authentication, classrooms, payments, editing, and long-document ingestion are intentionally out of scope.
 

@@ -44,7 +44,9 @@ export const LearnerStateSchema = z.object({
 const DialogueSchema = z.object({
   characterId: z.string(),
   text: z.string(),
-  emotion: z.string().optional(),
+  // Structured Outputs requires every field to be present. Nullable values keep
+  // optional presentation details representable while seeded episodes may omit them.
+  emotion: z.string().nullish(),
 });
 
 export const SceneSpecSchema = z.object({
@@ -56,12 +58,12 @@ export const SceneSpecSchema = z.object({
   conceptIds: z.array(z.string()),
   visualizationIds: z.array(z.string()),
   characterIds: z.array(z.string()),
-  narration: z.string().optional(),
+  narration: z.string().nullish(),
   dialogue: z.array(DialogueSchema),
   visualDirection: z.string(),
   visualMode: z
     .enum(["cockpit", "trajectory", "split_experiment", "gravity", "transfer"]),
-  choiceNodeId: z.string().optional(),
+  choiceNodeId: z.string().nullish(),
   nextSceneIds: z.array(z.string()),
 });
 
@@ -82,19 +84,19 @@ export const TeachingVisualizationSpecSchema = z.object({
   ]),
   learningPurpose: z.string(),
   learnerShouldNotice: z.array(z.string()),
-  concreteRepresentation: z.string().optional(),
-  abstractRepresentation: z.string().optional(),
+  concreteRepresentation: z.string().nullish(),
+  abstractRepresentation: z.string().nullish(),
   variablesOrLabels: z.array(z.string()),
   visualEncoding: z.object({
     emphasis: z.array(z.string()),
     colorMeaning: z.record(z.string(), z.string()),
-    motionMeaning: z.record(z.string(), z.string()).optional(),
+    motionMeaning: z.record(z.string(), z.string()).nullish(),
   }),
   renderer: z.enum(["manim", "svg", "canvas", "generated_image", "composited"]),
   placement: z.enum(["in_world_display", "prop_overlay", "split_screen", "focus_mode"]),
   trigger: z.enum(["core", "advance", "verify", "remediate"]),
   narration: z.string(),
-  checkForUnderstanding: z.string().optional(),
+  checkForUnderstanding: z.string().nullish(),
   deterministicFallback: z.string(),
 });
 
@@ -125,7 +127,7 @@ export const TransferTaskSpecSchema = z.object({
   explanation: z.string(),
 });
 
-const ShotSpecSchema = z.object({
+export const ShotSpecSchema = z.object({
   id: z.string(),
   sceneId: z.string(),
   template: z.enum([
@@ -149,12 +151,12 @@ const ShotSpecSchema = z.object({
   narrativeFunction: z.string(),
   educationalFunction: z.string(),
   characterIds: z.array(z.string()),
-  dialogue: z.string().optional(),
+  dialogue: z.string().nullish(),
   visualAction: z.string(),
   cameraMove: z.string(),
-  soundCue: z.string().optional(),
-  jokeSetup: z.string().optional(),
-  jokePayoff: z.string().optional(),
+  soundCue: z.string().nullish(),
+  jokeSetup: z.string().nullish(),
+  jokePayoff: z.string().nullish(),
 });
 
 const GateSchema = z.object({
@@ -200,7 +202,7 @@ export const EpisodeSpecSchema = z.object({
           role: z.string(),
           desire: z.string(),
           flaw: z.string(),
-          catchphrase: z.string().optional(),
+          catchphrase: z.string().nullish(),
           appearancePrompt: z.string(),
           voiceStyle: z.string(),
           forbiddenBehaviors: z.array(z.string()),
@@ -215,6 +217,8 @@ export const EpisodeSpecSchema = z.object({
   transferTask: TransferTaskSpecSchema,
   qualityGates: z.array(GateSchema).length(4),
 });
+
+export const EpisodeDraftSchema = EpisodeSpecSchema.omit({ shots: true });
 
 export const DirectorDecisionSchema = z.object({
   strategy: TeachingStrategySchema,
@@ -239,6 +243,8 @@ export const TransferSubmissionSchema = z.object({
 
 export type EpisodeSpec = z.infer<typeof EpisodeSpecSchema>;
 export type SceneSpec = z.infer<typeof SceneSpecSchema>;
+export type ShotSpec = z.infer<typeof ShotSpecSchema>;
+export type EpisodeDraft = z.infer<typeof EpisodeDraftSchema>;
 export type StoryState = z.infer<typeof StoryStateSchema>;
 export type LearnerState = z.infer<typeof LearnerStateSchema>;
 export type DirectorDecision = z.infer<typeof DirectorDecisionSchema>;
@@ -270,11 +276,15 @@ export function validateEpisodeSemantics(episode: EpisodeSpec) {
     const convergenceTargets = new Set<string>();
     for (const option of node.options) {
       for (const branchId of option.branchSceneIds) {
-        const branch = sceneById.get(branchId);
-        if (!branch || branch.kind !== "branch" || branch.nextSceneIds.length !== 1) {
+        const convergenceTarget = findConvergenceTarget(
+          branchId,
+          node.id,
+          sceneById,
+        );
+        if (!convergenceTarget) {
           throw new Error(`Choice ${node.id} contains an invalid or non-convergent branch.`);
         }
-        convergenceTargets.add(branch.nextSceneIds[0]);
+        convergenceTargets.add(convergenceTarget);
       }
     }
     if (convergenceTargets.size !== 1) {
@@ -282,7 +292,40 @@ export function validateEpisodeSemantics(episode: EpisodeSpec) {
     }
   }
 
+  if (
+    !episode.transferTask.options.some(
+      (option) => option.id === episode.transferTask.correctOptionId,
+    )
+  ) {
+    throw new Error("The transfer task correct option does not exist.");
+  }
+
   return episode;
+}
+
+function findConvergenceTarget(
+  startSceneId: string,
+  currentChoiceNodeId: string,
+  sceneById: Map<string, SceneSpec>,
+) {
+  let sceneId = startSceneId;
+  const visited = new Set<string>();
+
+  for (let depth = 0; depth < 6; depth += 1) {
+    if (visited.has(sceneId)) return null;
+    visited.add(sceneId);
+    const scene = sceneById.get(sceneId);
+    if (!scene) return null;
+
+    if (scene.kind === "transfer") return scene.id;
+    if (scene.choiceNodeId && scene.choiceNodeId !== currentChoiceNodeId) {
+      return scene.id;
+    }
+    if (scene.nextSceneIds.length !== 1) return null;
+    sceneId = scene.nextSceneIds[0];
+  }
+
+  return null;
 }
 
 export function createInitialStates(episode: EpisodeSpec) {

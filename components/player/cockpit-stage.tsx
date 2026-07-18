@@ -1,7 +1,26 @@
 import type { EpisodeSpec, SceneSpec, TeachingStrategy } from "@/lib/episode/schema";
+import { ConceptVisual } from "@/components/player/concept-visual";
 import { ProjectileVisual, TransferVisual } from "@/components/player/projectile-visual";
 
 export function CockpitStage({
+  episode,
+  scene,
+  dialogueIndex,
+  strategy,
+}: {
+  episode: EpisodeSpec;
+  scene: SceneSpec;
+  dialogueIndex: number;
+  strategy?: TeachingStrategy;
+}) {
+  if (episode.id !== "moonbase-last-shot") {
+    return <GeneratedDramaStage episode={episode} scene={scene} dialogueIndex={dialogueIndex} strategy={strategy} />;
+  }
+
+  return <MoonbaseStage episode={episode} scene={scene} dialogueIndex={dialogueIndex} strategy={strategy} />;
+}
+
+function MoonbaseStage({
   episode,
   scene,
   dialogueIndex,
@@ -54,15 +73,83 @@ export function CockpitStage({
       </div>
 
       {dialogue ? (
-        <div className="subtitle-card" role="status" aria-live="polite">
-          <div className={`speaker-token speaker-${dialogue.characterId}`}>{speaker?.name.slice(0, 1) ?? "•"}</div>
-          <div><span>{speaker?.name ?? "Narrator"}</span><p>{dialogue.text}</p></div>
+        <Subtitle speaker={speaker?.name} speakerId={dialogue.characterId} text={dialogue.text} />
+      ) : scene.narration ? <Subtitle text={scene.narration} /> : null}
+    </div>
+  );
+}
+
+function GeneratedDramaStage({
+  episode,
+  scene,
+  dialogueIndex,
+  strategy,
+}: {
+  episode: EpisodeSpec;
+  scene: SceneSpec;
+  dialogueIndex: number;
+  strategy?: TeachingStrategy;
+}) {
+  const dialogue = scene.dialogue[dialogueIndex];
+  const speaker = episode.storyBible.characters.find((character) => character.id === dialogue?.characterId);
+  const visual = scene.visualizationIds
+    .map((visualId) => episode.visualizations.find((item) => item.id === visualId))
+    .find(Boolean);
+  const activeCharacters = scene.characterIds.length
+    ? episode.storyBible.characters.filter((character) => scene.characterIds.includes(character.id))
+    : episode.storyBible.characters;
+
+  return (
+    <div className={`cinematic-stage generated-drama-stage ${visual ? "is-focus" : "is-story"}`}>
+      <div className="stage-grain" aria-hidden="true" />
+      <div className="stage-hud-top">
+        <span className="generated-location">{episode.storyBible.singleLocation}</span>
+        <span className="mission-timer"><i />{episode.storyBible.tickingClock}</span>
+      </div>
+
+      {!visual ? (
+        <div className="generated-set" aria-hidden="true">
+          <div className="generated-set__light" />
+          <div className="generated-set__board">
+            <small>LIVE CASE BOARD</small>
+            <strong>{episode.storyBible.stakes}</strong>
+            <div>{episode.storyBible.observableProps.slice(0, 3).map((prop, index) => <span key={prop}><i>{index + 1}</i>{prop}</span>)}</div>
+          </div>
+          <div className="generated-set__table"><span /><span /><span /></div>
+          <div className="generated-cast">
+            {activeCharacters.map((character, index) => (
+              <div className={`generated-character generated-character--${index + 1} ${character.id === dialogue?.characterId ? "is-speaking" : ""}`} key={character.id}>
+                <div className="generated-character__head"><i /></div>
+                <div className="generated-character__body"><span>{character.name.slice(0, 1)}</span></div>
+                <small>{character.name}</small>
+              </div>
+            ))}
+          </div>
         </div>
-      ) : scene.narration ? (
-        <div className="subtitle-card subtitle-card--narration" role="status" aria-live="polite">
-          <div><span>Narrator</span><p>{scene.narration}</p></div>
-        </div>
-      ) : null}
+      ) : (
+        <div className="visual-focus generated-visual-focus"><ConceptVisual visual={visual} /></div>
+      )}
+
+      <div className="stage-scene-label">
+        <span>{scene.kind === "branch" ? `${strategy ?? "adaptive"} branch` : scene.kind}</span>
+        <strong>{scene.title}</strong>
+      </div>
+
+      {dialogue ? (
+        <Subtitle speaker={speaker?.name} speakerId={dialogue.characterId} text={dialogue.text} />
+      ) : scene.narration ? <Subtitle text={scene.narration} /> : null}
+    </div>
+  );
+}
+
+function Subtitle({ speaker, speakerId, text }: { speaker?: string; speakerId?: string; text: string }) {
+  if (!speakerId) {
+    return <div className="subtitle-card subtitle-card--narration" role="status" aria-live="polite"><div><span>Narrator</span><p>{text}</p></div></div>;
+  }
+  return (
+    <div className="subtitle-card" role="status" aria-live="polite">
+      <div className={`speaker-token speaker-${speakerId}`}>{speaker?.slice(0, 1) ?? "•"}</div>
+      <div><span>{speaker ?? "Narrator"}</span><p>{text}</p></div>
     </div>
   );
 }

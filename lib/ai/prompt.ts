@@ -14,7 +14,8 @@ Requirements:
 - Branches must reconverge.
 - Every quality-gate score must be at least 4/5.
 - Do not include chain-of-thought; provide only concise product-facing explanations.
-- Only use approved visual modes and reusable shot templates supported by the schema.`;
+- Give every scene a concise visual direction that makes its educational purpose observable.
+- Do not generate a separate shot list; the fixed player derives approved shot templates from the scenes.`;
 
 export function createEpisodePrompt(input: {
   sourceInput: string;

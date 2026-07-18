@@ -114,9 +114,10 @@ export function makeDirectorDecision(
     ],
   };
 
+  const isFinalCheckpoint = episode.choiceNodes.at(-1)?.id === node.id;
   const rationale = {
     advance:
-      node.id === "choice-gravity"
+      isFinalCheckpoint
         ? "The learner applied the relationship to a changed condition with high confidence, so the story advances to an unassisted transfer."
         : "The learner selected the intended relationship with high confidence, so the story advances to a changed condition.",
     verify:

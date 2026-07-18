@@ -64,6 +64,22 @@ describe("adaptation policy", () => {
     });
     expect(result.decision.shortRationale).toContain("unassisted transfer");
   });
+
+  it("recognizes the final checkpoint by episode order rather than a seeded ID", () => {
+    const episode = structuredClone(moonbaseEpisode);
+    const finalNode = episode.choiceNodes[1];
+    finalNode.id = "generated-checkpoint-two";
+    const sourceScene = episode.scenes.find((scene) => scene.id === finalNode.sceneId);
+    if (sourceScene) sourceScene.choiceNodeId = finalNode.id;
+    const states = createInitialStates(episode);
+    const result = makeDirectorDecision(episode, {
+      choiceNodeId: finalNode.id,
+      optionId: "farther",
+      confidence: "very_sure",
+      ...states,
+    });
+    expect(result.decision.shortRationale).toContain("unassisted transfer");
+  });
 });
 
 describe("transfer evaluation", () => {

@@ -29,18 +29,21 @@ export function EpisodePlayer({
   const scene = episode.scenes.find((item) => item.id === storyState.currentSceneId) ?? episode.scenes[0];
   const choiceNode = episode.choiceNodes.find((item) => item.id === scene.choiceNodeId);
   const currentDialogue = scene.dialogue[dialogueIndex];
+  const currentSpeaker = episode.storyBible.characters.find((character) => character.id === currentDialogue?.characterId);
   const spokenText = currentDialogue?.text ?? scene.narration ?? "";
-  const pathStep = getPathStep(scene.id, Boolean(transferResult));
+  const pathStep = getPathStep(episode, scene, storyState, Boolean(transferResult));
+  const transferSceneId = episode.scenes.find((item) => item.kind === "transfer")?.id;
 
   useEffect(() => {
     if (!voiceOn || !spokenText || !("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(spokenText);
-    utterance.rate = 0.96;
-    utterance.pitch = currentDialogue?.characterId === "bolt" ? 1.25 : 1;
+    const speakerIndex = episode.storyBible.characters.findIndex((character) => character.id === currentDialogue?.characterId);
+    utterance.rate = currentSpeaker?.voiceStyle.match(/快|quick|rapid/i) ? 1.08 : 0.96;
+    utterance.pitch = speakerIndex < 0 ? 1 : 0.92 + speakerIndex * 0.14;
     window.speechSynthesis.speak(utterance);
     return () => window.speechSynthesis.cancel();
-  }, [currentDialogue?.characterId, spokenText, voiceOn]);
+  }, [currentDialogue?.characterId, currentSpeaker?.voiceStyle, episode.storyBible.characters, spokenText, voiceOn]);
 
   useEffect(() => {
     window.localStorage.setItem(
@@ -53,9 +56,10 @@ export function EpisodePlayer({
   const beatButtonLabel = useMemo(() => {
     if (dialogueIndex < scene.dialogue.length - 1) return "Next line";
     if (choiceNode) return "Make the call";
-    if (scene.kind === "branch") return scene.nextSceneIds[0] === "transfer" ? "Take the transfer check" : "Return to the cockpit";
+    if (scene.nextSceneIds[0] === transferSceneId) return "Take the transfer check";
+    if (scene.kind === "branch" || scene.kind === "explanation") return "Follow the evidence";
     return "Continue";
-  }, [choiceNode, dialogueIndex, scene]);
+  }, [choiceNode, dialogueIndex, scene, transferSceneId]);
 
   function advanceBeat() {
     if (dialogueIndex < scene.dialogue.length - 1) {
@@ -167,7 +171,6 @@ export function EpisodePlayer({
 
         <div className={`player-frame ${captionsOn ? "captions-on" : "captions-off"}`}>
           <CockpitStage episode={episode} scene={scene} dialogueIndex={dialogueIndex} strategy={currentStrategy} />
-          {directorNote ? <div className={`director-note strategy-${directorNote.strategy}`}><span>AI director · {directorNote.strategy}</span><p>{directorNote.text}</p></div> : null}
           {choiceOpen && choiceNode ? <ChoicePanel node={choiceNode} checkpoint={episode.choiceNodes.findIndex((item) => item.id === choiceNode.id) + 1} onCommit={commitChoice} busy={busy} /> : null}
           {scene.kind === "transfer" ? (
             <div className="choice-dock transfer-dock">
@@ -183,7 +186,8 @@ export function EpisodePlayer({
           <p className="eyebrow">Scene purpose</p>
           <h2>{scene.title}</h2>
           <p>{scene.educationalPurpose}</p>
-          {scene.visualizationIds.length ? <div className="visual-evidence"><span>Deterministic visual</span><strong>SVG · exact labels</strong><small>{scene.visualizationIds.join(" · ")}</small></div> : null}
+          {directorNote ? <div className={`director-note strategy-${directorNote.strategy}`}><span>AI director · {directorNote.strategy}</span><p>{directorNote.text}</p></div> : null}
+          {scene.visualizationIds.length ? <div className="visual-evidence"><span>Deterministic visual</span><strong>{getRendererLabel(episode, scene)}</strong><small>{scene.visualizationIds.join(" · ")}</small></div> : null}
           {scene.kind !== "transfer" && !choiceOpen ? <button className="primary-button scene-next" onClick={advanceBeat}>{beatButtonLabel} <span>→</span></button> : null}
           <small className="keyboard-hint">Captions are on by default. Voice uses your browser’s local speech engine.</small>
         </aside>
@@ -192,13 +196,24 @@ export function EpisodePlayer({
   );
 }
 
-function getPathStep(sceneId: string, complete: boolean) {
+export function getPathStep(episode: EpisodeSpec, scene: EpisodeSpec["scenes"][number], storyState: StoryState, complete: boolean) {
   if (complete) return 100;
-  if (sceneId === "cold-open") return 12;
-  if (sceneId === "first-decision") return 28;
-  if (sceneId.startsWith("speed-")) return 46;
-  if (sceneId === "second-decision") return 63;
-  if (sceneId.startsWith("gravity-")) return 82;
-  if (sceneId === "transfer") return 94;
-  return 8;
+  if (scene.kind === "transfer") return 94;
+
+  const currentChoiceIndex = episode.choiceNodes.findIndex((node) => node.id === scene.choiceNodeId);
+  if (currentChoiceIndex === 0) return 28;
+  if (currentChoiceIndex === 1) return 63;
+
+  const completedChoices = episode.choiceNodes.filter((node) => storyState.completedSceneIds.includes(node.sceneId)).length;
+  if (completedChoices >= 2) return 82;
+  if (completedChoices === 1) return 46;
+  return episode.scenes[0]?.id === scene.id ? 12 : 18;
+}
+
+function getRendererLabel(episode: EpisodeSpec, scene: EpisodeSpec["scenes"][number]) {
+  const renderers = scene.visualizationIds
+    .map((visualId) => episode.visualizations.find((visual) => visual.id === visualId)?.renderer)
+    .filter((renderer): renderer is EpisodeSpec["visualizations"][number]["renderer"] => Boolean(renderer));
+  const unique = Array.from(new Set(renderers)).map((renderer) => renderer.toUpperCase());
+  return `${unique.join(" + ") || "SVG"} · exact labels`;
 }

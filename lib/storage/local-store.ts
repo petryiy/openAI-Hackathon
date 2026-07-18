@@ -50,6 +50,17 @@ export async function saveEpisode(episode: EpisodeSpec) {
   return parsed;
 }
 
+export async function saveEpisodeDraft(episode: EpisodeSpec) {
+  const parsed = EpisodeSpecSchema.parse(episode);
+  await writeJson("drafts", parsed.id, parsed);
+  return parsed;
+}
+
+export async function readEpisodeDraft(id: string) {
+  const value = await readJson("drafts", id);
+  return value ? EpisodeSpecSchema.parse(value) : null;
+}
+
 export async function readEpisode(id: string) {
   const value = await readJson("episodes", id);
   return value ? EpisodeSpecSchema.parse(value) : null;
