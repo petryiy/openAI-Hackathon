@@ -28,3 +28,6 @@ coverage/
 
 # others
 temp/
+
+# AI
+AGENTS.md
