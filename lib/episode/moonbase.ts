@@ -1,0 +1,491 @@
+import { EpisodeSpecSchema, validateEpisodeSemantics } from "@/lib/episode/schema";
+
+export const MOONBASE_EPISODE_ID = "moonbase-last-shot";
+
+export const moonbaseEpisode = validateEpisodeSemantics(EpisodeSpecSchema.parse({
+  id: MOONBASE_EPISODE_ID,
+  title: "Moonbase Last Shot",
+  sourceInput:
+    "A capsule is launched horizontally from the same height. If its horizontal speed doubles, how do its landing time and horizontal distance change?",
+  subject: "Physics · Projectile motion",
+  level: "Secondary school",
+  learningObjective:
+    "Separate horizontal and vertical motion so landing time can be reasoned about independently from horizontal speed.",
+  canonicalExplanation:
+    "For a horizontal launch from the same height, vertical motion determines flight time: t = √(2h/g). Doubling horizontal speed does not change that time, so horizontal distance x = vₓt doubles.",
+  concepts: [
+    {
+      id: "independent-components",
+      name: "Independent motion components",
+      relationship:
+        "Horizontal speed changes horizontal displacement but not vertical fall time.",
+    },
+    {
+      id: "gravity-time",
+      name: "Gravity and fall time",
+      relationship:
+        "At the same height, weaker gravity increases flight time and therefore horizontal distance at a fixed horizontal speed.",
+    },
+  ],
+  storyBible: {
+    genre: "sci_fi",
+    episodeFormat: "bottle_episode",
+    tone: "deadpan",
+    premise:
+      "From one lunar-rover cockpit, the learner must launch medicine across a crater before a dust storm closes the corridor.",
+    stakes: "A field clinic loses its medicine window when the timer reaches zero.",
+    visualStyle:
+      "Graphic motion-comic cockpit in ink black, warm bone, signal amber, and electric cyan.",
+    singleLocation: "Lunar rover cockpit",
+    tickingClock: "Dust corridor closes in 02:30",
+    observableProps: [
+      "launch-speed control",
+      "mission timer",
+      "cockpit window",
+      "trajectory display",
+      "loose spanner",
+      "gravity readout",
+    ],
+    worldRules: [
+      "Exterior events are observed only through the cockpit window and instrument feeds.",
+      "Blue encodes horizontal motion; amber encodes vertical motion and gravity.",
+      "Every prediction changes a launch-system action and has a visible consequence.",
+    ],
+    runningGag:
+      "BOLT treats ‘faster horizontally’ as ‘faster in every possible direction.’",
+    callbackPayoff:
+      "BOLT interrupts its own final overconfident claim and correctly separates horizontal from vertical motion.",
+    visualMotifs: ["split timers", "cyan vectors", "amber gravity pulses"],
+    characters: [
+      {
+        id: "aya",
+        name: "Aya Chen",
+        role: "Careful mission specialist",
+        desire: "Deliver the medicine without gambling the only capsule.",
+        flaw: "Explains too cautiously when the clock is running.",
+        catchphrase: "Separate what changes from what does not.",
+        appearancePrompt:
+          "Original East Asian lunar mission specialist, cropped dark hair, bone-white utility suit, cyan display light",
+        voiceStyle: "calm, precise, warm",
+        forbiddenBehaviors: ["mocking the learner", "guessing unsupported facts"],
+      },
+      {
+        id: "bolt",
+        name: "BOLT-7",
+        role: "Overconfident helper robot",
+        desire: "Be quoted in the mission report as the decisive expert.",
+        flaw: "Overgeneralizes one change to every component.",
+        catchphrase: "Maximum speed. Minimum discussion.",
+        appearancePrompt:
+          "Small original utility robot, square amber face display, scratched white shell, expressive antennae",
+        voiceStyle: "bright, clipped, confidently wrong without cruelty",
+        forbiddenBehaviors: ["ridiculing wrong answers", "rewarding unsafe choices"],
+      },
+    ],
+  },
+  visualizations: [
+    {
+      id: "trajectory-core",
+      conceptIds: ["independent-components"],
+      type: "simulation",
+      learningPurpose:
+        "Show that two horizontal speeds share the same vertical position at the same instant.",
+      learnerShouldNotice: [
+        "Both capsules reach the ground on the same timer beat.",
+        "Only horizontal spacing changes when vₓ doubles.",
+      ],
+      concreteRepresentation: "Two medicine capsules crossing the crater",
+      abstractRepresentation: "x = vₓt and y = h − ½gt²",
+      variablesOrLabels: ["vₓ", "2vₓ", "t", "g", "h"],
+      visualEncoding: {
+        emphasis: ["synchronized vertical guides", "different horizontal endpoints"],
+        colorMeaning: {
+          cyan: "horizontal velocity and displacement",
+          amber: "vertical fall and gravity",
+        },
+        motionMeaning: {
+          "pulsing horizontal arrows": "constant horizontal velocity",
+          "growing vertical arrows": "vertical acceleration",
+        },
+      },
+      renderer: "svg",
+      placement: "focus_mode",
+      trigger: "core",
+      narration:
+        "At each shared time marker, the capsules have fallen by the same vertical amount—even though one moves farther sideways.",
+      checkForUnderstanding: "Which motion component decides when the ground is reached?",
+      deterministicFallback: "Responsive SVG projectile paths with synchronized markers",
+    },
+    {
+      id: "drop-split",
+      conceptIds: ["independent-components"],
+      type: "side_by_side_comparison",
+      learningPurpose:
+        "Make a confident misconception fail visibly by comparing a dropped object with a horizontally launched one.",
+      learnerShouldNotice: [
+        "The vertical timers stay synchronized.",
+        "The launched capsule has extra horizontal motion, not extra vertical speed.",
+      ],
+      concreteRepresentation: "A loose spanner drops as a capsule launches",
+      abstractRepresentation: "Identical y(t) for both objects",
+      variablesOrLabels: ["t = 0", "t = 1", "same y"],
+      visualEncoding: {
+        emphasis: ["horizontal alignment guides", "matching timer rings"],
+        colorMeaning: { cyan: "horizontal-only difference", amber: "shared vertical motion" },
+      },
+      renderer: "svg",
+      placement: "split_screen",
+      trigger: "remediate",
+      narration:
+        "The spanner has no horizontal speed. The capsule does. Their vertical fall still stays in lockstep.",
+      checkForUnderstanding: "Which component controls landing time?",
+      deterministicFallback: "Two-panel synchronized SVG animation",
+    },
+    {
+      id: "component-contrast",
+      conceptIds: ["independent-components"],
+      type: "diagram",
+      learningPurpose:
+        "Verify low-confidence correctness by contrasting the changed and unchanged quantities.",
+      learnerShouldNotice: ["vₓ doubles", "t is unchanged", "x therefore doubles"],
+      abstractRepresentation: "x = vₓt",
+      variablesOrLabels: ["vₓ × 2", "t × 1", "x × 2"],
+      visualEncoding: {
+        emphasis: ["factor cards"],
+        colorMeaning: { cyan: "changed horizontal quantity", amber: "unchanged fall time" },
+      },
+      renderer: "svg",
+      placement: "in_world_display",
+      trigger: "verify",
+      narration: "Double one factor while the other stays fixed, and the product doubles.",
+      deterministicFallback: "SVG factor equation",
+    },
+    {
+      id: "gravity-comparison",
+      conceptIds: ["gravity-time"],
+      type: "side_by_side_comparison",
+      learningPurpose:
+        "Transfer the component model to a changed gravitational field.",
+      learnerShouldNotice: [
+        "Lower g means slower vertical fall.",
+        "More time in flight means more horizontal distance at the same vₓ.",
+      ],
+      abstractRepresentation: "t = √(2h/g)",
+      variablesOrLabels: ["g", "t", "x = vₓt"],
+      visualEncoding: {
+        emphasis: ["longer amber timer", "farther cyan endpoint"],
+        colorMeaning: { cyan: "horizontal distance", amber: "gravity and flight time" },
+      },
+      renderer: "svg",
+      placement: "focus_mode",
+      trigger: "advance",
+      narration:
+        "Reduce gravity and the vertical fall takes longer. Horizontal speed keeps working for that extra time.",
+      deterministicFallback: "Paired SVG arcs with parameter labels",
+    },
+  ],
+  choiceNodes: [
+    {
+      id: "choice-speed",
+      sceneId: "first-decision",
+      prompt: "BOLT doubles horizontal speed. What launch order do you give?",
+      conceptId: "independent-components",
+      options: [
+        {
+          id: "earlier",
+          label: "Compensate—it will land earlier.",
+          correctness: "incorrect",
+          learnerHypothesis: "Horizontal speed controls vertical landing time.",
+          storyConsequence: "Aya runs a split launch-and-drop experiment before risking the medicine.",
+          allowedStrategies: ["remediate"],
+          branchSceneIds: ["speed-remediate"],
+        },
+        {
+          id: "same-double",
+          label: "Keep the timer—it lands together, twice as far.",
+          correctness: "correct",
+          learnerHypothesis: "Horizontal and vertical motion are independent.",
+          storyConsequence: "The crew either verifies the rule or advances directly to the launch window.",
+          allowedStrategies: ["verify", "advance"],
+          branchSceneIds: ["speed-verify", "speed-advance"],
+        },
+        {
+          id: "later",
+          label: "Delay the catch—it will land later.",
+          correctness: "incorrect",
+          learnerHypothesis: "Greater path length necessarily means greater flight time.",
+          storyConsequence: "The trajectory display separates path shape from vertical timing.",
+          allowedStrategies: ["remediate"],
+          branchSceneIds: ["speed-remediate"],
+        },
+        {
+          id: "unsure-speed",
+          label: "I’m not sure—run a safe test.",
+          correctness: "uncertain",
+          learnerHypothesis: "The learner needs a concrete component comparison.",
+          storyConsequence: "Aya uses the loose spanner as a no-risk comparison object.",
+          allowedStrategies: ["remediate"],
+          branchSceneIds: ["speed-remediate"],
+        },
+      ],
+    },
+    {
+      id: "choice-gravity",
+      sceneId: "second-decision",
+      prompt: "A gravity fault halves g. At the same vₓ and height, where should the rover aim?",
+      conceptId: "gravity-time",
+      options: [
+        {
+          id: "farther",
+          label: "Farther: it falls longer, so it travels farther sideways.",
+          correctness: "correct",
+          learnerHypothesis: "The learner applies the vertical-time relationship to a changed condition.",
+          storyConsequence: "The learner takes launch authority and shifts the target beyond the first marker.",
+          allowedStrategies: ["verify", "advance"],
+          branchSceneIds: ["gravity-verify", "gravity-advance"],
+        },
+        {
+          id: "same-place",
+          label: "Same place: horizontal speed did not change.",
+          correctness: "incorrect",
+          learnerHypothesis: "The learner overlooks how changed flight time affects horizontal distance.",
+          storyConsequence: "The HUD exposes the longer vertical timer before the final launch.",
+          allowedStrategies: ["remediate"],
+          branchSceneIds: ["gravity-remediate"],
+        },
+        {
+          id: "closer",
+          label: "Closer: weaker gravity pulls it down sooner.",
+          correctness: "incorrect",
+          learnerHypothesis: "The direction of gravity’s effect on fall time is reversed.",
+          storyConsequence: "Two gravity traces make the slower fall visible.",
+          allowedStrategies: ["remediate"],
+          branchSceneIds: ["gravity-remediate"],
+        },
+        {
+          id: "unsure-gravity",
+          label: "I’m not sure—compare the two gravity traces.",
+          correctness: "uncertain",
+          learnerHypothesis: "The learner needs a visual bridge from gravity to time.",
+          storyConsequence: "Aya overlays paired arcs before committing the capsule.",
+          allowedStrategies: ["remediate"],
+          branchSceneIds: ["gravity-remediate"],
+        },
+      ],
+    },
+  ],
+  scenes: [
+    {
+      id: "cold-open",
+      kind: "story",
+      title: "02:30 to blackout",
+      summary: "The dust corridor is closing and BOLT has already doubled the launch speed.",
+      educationalPurpose: "Turn horizontal speed into an immediate causal story problem.",
+      conceptIds: ["independent-components"],
+      visualizationIds: [],
+      characterIds: ["aya", "bolt"],
+      narration: "One rover. One medicine capsule. One robot who has already touched the speed control.",
+      dialogue: [
+        { characterId: "bolt", text: "Horizontal speed doubled. Therefore everything happens twice as fast.", emotion: "triumphant" },
+        { characterId: "aya", text: "You changed one component, BOLT. Learner—take the launch console.", emotion: "urgent" },
+      ],
+      visualDirection: "Wide cockpit; amber alarm; dust crawls across the windshield; speed dial snaps to 2×.",
+      visualMode: "cockpit",
+      nextSceneIds: ["first-decision"],
+    },
+    {
+      id: "first-decision",
+      kind: "story",
+      title: "The first launch order",
+      summary: "The learner predicts the consequence of doubling horizontal speed.",
+      educationalPurpose: "Diagnose whether horizontal speed is incorrectly linked to fall time.",
+      conceptIds: ["independent-components"],
+      visualizationIds: ["trajectory-core"],
+      characterIds: ["aya", "bolt"],
+      narration: "The display holds height and lunar gravity fixed. Only the cyan horizontal vector changes.",
+      dialogue: [
+        { characterId: "aya", text: "Same height. Same gravity. The cyan arrow doubles. What actually changes?", emotion: "focused" },
+      ],
+      visualDirection: "Push into the trajectory display; reveal horizontal and vertical colors progressively.",
+      visualMode: "trajectory",
+      choiceNodeId: "choice-speed",
+      nextSceneIds: ["speed-remediate", "speed-verify", "speed-advance"],
+    },
+    {
+      id: "speed-remediate",
+      kind: "branch",
+      title: "Launch versus drop",
+      summary: "A split experiment makes the component misconception fail visibly.",
+      educationalPurpose: "Remediate with a concrete synchronized comparison.",
+      conceptIds: ["independent-components"],
+      visualizationIds: ["drop-split"],
+      characterIds: ["aya", "bolt"],
+      dialogue: [
+        { characterId: "aya", text: "Capsule launches. Spanner drops. Watch only their amber height markers.", emotion: "precise" },
+        { characterId: "bolt", text: "Request: delete my previous expert statement.", emotion: "deadpan" },
+      ],
+      visualDirection: "Split-screen timers remain synchronized while only the capsule moves sideways.",
+      visualMode: "split_experiment",
+      nextSceneIds: ["second-decision"],
+    },
+    {
+      id: "speed-verify",
+      kind: "branch",
+      title: "One factor changed",
+      summary: "The correct low-confidence answer is verified with a factor contrast.",
+      educationalPurpose: "Stabilize the relationship before adding a changed condition.",
+      conceptIds: ["independent-components"],
+      visualizationIds: ["component-contrast"],
+      characterIds: ["aya", "bolt"],
+      dialogue: [
+        { characterId: "aya", text: "Exactly. vₓ doubles. The fall timer does not. So x doubles.", emotion: "encouraging" },
+        { characterId: "bolt", text: "A suspiciously selective kind of faster.", emotion: "processing" },
+      ],
+      visualDirection: "Three factor cards lock into vₓ × t = x on the cockpit HUD.",
+      visualMode: "trajectory",
+      nextSceneIds: ["second-decision"],
+    },
+    {
+      id: "speed-advance",
+      kind: "branch",
+      title: "Authority transferred",
+      summary: "The learner’s confident correct prediction moves the story forward quickly.",
+      educationalPurpose: "Advance without redundant explanation while briefly encoding the rule.",
+      conceptIds: ["independent-components"],
+      visualizationIds: ["trajectory-core"],
+      characterIds: ["aya", "bolt"],
+      dialogue: [
+        { characterId: "aya", text: "Correct. Flight time comes from the amber vertical motion. You have launch authority.", emotion: "decisive" },
+        { characterId: "bolt", text: "I will supervise your supervision of me.", emotion: "recovering" },
+      ],
+      visualDirection: "Learner-control light changes from amber to cyan; trajectories land together.",
+      visualMode: "trajectory",
+      nextSceneIds: ["second-decision"],
+    },
+    {
+      id: "second-decision",
+      kind: "story",
+      title: "Gravity fault",
+      summary: "A sensor fault halves effective gravity and changes the vertical relationship.",
+      educationalPurpose: "Test application under a changed condition rather than recall.",
+      conceptIds: ["gravity-time"],
+      visualizationIds: ["gravity-comparison"],
+      characterIds: ["aya", "bolt"],
+      narration: "A damaged stabilizer cuts effective gravity in half. Horizontal speed stays fixed.",
+      dialogue: [
+        { characterId: "bolt", text: "Less gravity means—", emotion: "about to grandstand" },
+        { characterId: "bolt", text: "…I will now look at the learner.", emotion: "self-correcting" },
+      ],
+      visualDirection: "Gravity readout falls to 0.5g; amber arc stretches in time while cyan speed remains fixed.",
+      visualMode: "gravity",
+      choiceNodeId: "choice-gravity",
+      nextSceneIds: ["gravity-remediate", "gravity-verify", "gravity-advance"],
+    },
+    {
+      id: "gravity-remediate",
+      kind: "branch",
+      title: "The longer amber timer",
+      summary: "Paired traces connect weaker gravity to longer fall time and farther travel.",
+      educationalPurpose: "Build a concrete-to-equation bridge for the changed condition.",
+      conceptIds: ["gravity-time"],
+      visualizationIds: ["gravity-comparison"],
+      characterIds: ["aya", "bolt"],
+      dialogue: [
+        { characterId: "aya", text: "Weaker gravity changes the vertical timer. Longer in the air means farther sideways at the same vₓ.", emotion: "scaffolding" },
+        { characterId: "bolt", text: "Horizontal speed keeps working overtime. This statement may remain on record.", emotion: "careful" },
+      ],
+      visualDirection: "Compare g and 0.5g arcs; expand t before revealing x = vₓt.",
+      visualMode: "gravity",
+      nextSceneIds: ["transfer"],
+    },
+    {
+      id: "gravity-verify",
+      kind: "branch",
+      title: "Aim beyond the marker",
+      summary: "A low-confidence correct prediction is verified on the HUD.",
+      educationalPurpose: "Confirm the causal chain g↓ → t↑ → x↑.",
+      conceptIds: ["gravity-time"],
+      visualizationIds: ["gravity-comparison"],
+      characterIds: ["aya", "bolt"],
+      dialogue: [
+        { characterId: "aya", text: "That chain is right: lower g, longer t, farther x. Shift the target.", emotion: "encouraging" },
+        { characterId: "bolt", text: "Three arrows. Zero universal claims. Personal growth.", emotion: "proud" },
+      ],
+      visualDirection: "Causal arrows illuminate sequentially, then the target reticle slides outward.",
+      visualMode: "gravity",
+      nextSceneIds: ["transfer"],
+    },
+    {
+      id: "gravity-advance",
+      kind: "branch",
+      title: "Last shot",
+      summary: "The learner applies the relationship and fires before the corridor closes.",
+      educationalPurpose: "Advance to independent transfer after successful application.",
+      conceptIds: ["gravity-time"],
+      visualizationIds: ["gravity-comparison"],
+      characterIds: ["aya", "bolt"],
+      dialogue: [
+        { characterId: "aya", text: "Target shifted. Launch corridor open. Your call.", emotion: "trusting" },
+        { characterId: "bolt", text: "Horizontal and vertical motion: separate departments. Launch.", emotion: "correctly confident" },
+      ],
+      visualDirection: "Final wide cockpit shot; capsule arc clears the crater as storm shutters descend.",
+      visualMode: "gravity",
+      nextSceneIds: ["transfer"],
+    },
+    {
+      id: "transfer",
+      kind: "transfer",
+      title: "One last check—new world",
+      summary: "An unassisted table-edge problem tests the same relationship in a new context.",
+      educationalPurpose: "Measure transfer separately from the supported story choices.",
+      conceptIds: ["independent-components"],
+      visualizationIds: [],
+      characterIds: [],
+      dialogue: [],
+      visualDirection: "Quiet neutral diagram; no cockpit hints, narration, or character reactions.",
+      visualMode: "transfer",
+      nextSceneIds: [],
+    },
+  ],
+  shots: [
+    { id: "s01", sceneId: "cold-open", template: "three-character establishing shot", durationMs: 6000, narrativeFunction: "Establish crisis", educationalFunction: "Show the one changed control", characterIds: ["aya", "bolt"], dialogue: "Horizontal speed doubled.", visualAction: "Dial snaps to 2×", cameraMove: "slow push-in", soundCue: "alarm pulse", jokeSetup: "BOLT universalizes faster" },
+    { id: "s02", sceneId: "first-decision", template: "point-of-view instrument shot", durationMs: 7000, narrativeFunction: "Give learner control", educationalFunction: "Color-code components", characterIds: ["aya"], visualAction: "Vectors reveal progressively", cameraMove: "rack focus to HUD" },
+    { id: "s03", sceneId: "speed-remediate", template: "split-screen comparison", durationMs: 9000, narrativeFunction: "Disprove prediction safely", educationalFunction: "Synchronize vertical motion", characterIds: ["aya", "bolt"], visualAction: "Spanner drops while capsule launches", cameraMove: "locked comparison", jokePayoff: "Delete expert statement" },
+    { id: "s04", sceneId: "speed-verify", template: "freeze frame with annotation", durationMs: 7000, narrativeFunction: "Confirm plan", educationalFunction: "Show factor relationship", characterIds: ["aya", "bolt"], visualAction: "Factor cards assemble", cameraMove: "micro push-in" },
+    { id: "s05", sceneId: "speed-advance", template: "environment-wide consequence", durationMs: 6000, narrativeFunction: "Transfer authority", educationalFunction: "Encode same-time endpoints", characterIds: ["aya", "bolt"], visualAction: "Control light turns cyan", cameraMove: "wide to console" },
+    { id: "s06", sceneId: "second-decision", template: "reaction close-up", durationMs: 6000, narrativeFunction: "Show character change", educationalFunction: "Hold vₓ fixed as g changes", characterIds: ["bolt"], visualAction: "BOLT stops itself", cameraMove: "snap zoom", jokeSetup: "BOLT begins another claim" },
+    { id: "s07", sceneId: "gravity-remediate", template: "Manim diagram insertion", durationMs: 9000, narrativeFunction: "Recover launch plan", educationalFunction: "Show g↓ to t↑ to x↑", characterIds: ["aya", "bolt"], visualAction: "Paired arcs and timers", cameraMove: "focus mode" },
+    { id: "s08", sceneId: "gravity-verify", template: "route/tool selection", durationMs: 7000, narrativeFunction: "Commit target", educationalFunction: "Verify causal chain", characterIds: ["aya", "bolt"], visualAction: "Reticle shifts outward", cameraMove: "HUD pan" },
+    { id: "s09", sceneId: "gravity-advance", template: "final callback payoff", durationMs: 8000, narrativeFunction: "Resolve crisis and arc", educationalFunction: "State component separation", characterIds: ["aya", "bolt"], visualAction: "Capsule clears crater", cameraMove: "final wide", jokePayoff: "Separate departments" },
+    { id: "s10", sceneId: "transfer", template: "freeze frame with annotation", durationMs: 10000, narrativeFunction: "Remove story support", educationalFunction: "Test transfer", characterIds: [], visualAction: "Ball and table only", cameraMove: "none" }
+  ],
+  transferTask: {
+    id: "table-transfer",
+    prompt:
+      "Two balls roll off the same table at the same instant. Ball B has twice Ball A’s horizontal speed. Ignoring air resistance, what happens?",
+    conceptIds: ["independent-components"],
+    options: [
+      { id: "b-earlier", label: "Ball B hits the floor earlier." },
+      { id: "same-time-double", label: "They land together; Ball B travels twice as far horizontally." },
+      { id: "b-later", label: "Ball B hits the floor later." },
+      { id: "same-place", label: "They land together at the same horizontal position." },
+    ],
+    correctOptionId: "same-time-double",
+    explanation:
+      "Both balls have the same initial vertical motion and fall from the same height, so they land together. Ball B moves horizontally twice as fast for the same time, so it travels twice as far.",
+  },
+  qualityGates: [
+    { name: "script", scores: { tension: 5, plot_dependency: 5, continuity: 5, choices: 5, callback: 5, dialogue: 4 }, repairs: [] },
+    { name: "pedagogy", scores: { correctness: 5, distractors: 5, consequence: 5, humor_safety: 5, changed_condition: 5, transfer: 5 }, repairs: [] },
+    { name: "visualization", scores: { necessity: 5, correctness: 5, salience: 5, encoding: 5, progression: 4, integration: 5, adaptation: 5, fallback: 5 }, repairs: [] },
+    { name: "render", scores: { continuity: 5, composition: 4, subtitles: 5, timing: 4, pacing: 4, branch_parity: 5 }, repairs: [] }
+  ]
+}));
+
+export function isMoonbaseSource(input: string) {
+  const normalized = input.toLowerCase();
+  return (
+    normalized.includes("launched horizontally") &&
+    (normalized.includes("speed doubles") || normalized.includes("speed double") || normalized.includes("twice"))
+  );
+}

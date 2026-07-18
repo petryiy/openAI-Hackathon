@@ -1,0 +1,31 @@
+{
+  "id": "moonbase-projectile-motion",
+  "input": "A capsule is launched horizontally from the same height. If its horizontal speed doubles, how do its landing time and horizontal distance change?",
+  "mustInclude": {
+    "concepts": ["independent horizontal and vertical motion"],
+    "choicePoints": 2,
+    "transferTask": true,
+    "deterministicVisualization": true,
+    "singleLocation": "lunar rover cockpit"
+  },
+  "branchExpectations": [
+    {
+      "answer": "lands earlier",
+      "confidence": "very_sure",
+      "strategy": "remediate",
+      "representation": "counterexample"
+    },
+    {
+      "answer": "same time and twice as far",
+      "confidence": "guessing",
+      "strategy": "verify",
+      "representation": "contrasting_case"
+    },
+    {
+      "answer": "same time and twice as far",
+      "confidence": "very_sure",
+      "strategy": "advance",
+      "representation": "equation"
+    }
+  ]
+}
