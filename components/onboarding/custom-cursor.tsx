@@ -1,17 +1,46 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { FluidTrail } from "@/components/onboarding/fluid-trail";
+import dynamic from "next/dynamic";
+import { useEffect, useRef, useSyncExternalStore } from "react";
+
+const LiquidEther = dynamic(
+  () => import("@/components/onboarding/liquid-ether").then((m) => ({ default: m.LiquidEther })),
+  { ssr: false },
+);
+
+const FINE_POINTER_QUERY = "(pointer: fine)";
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribePointerPreferences(onChange: () => void) {
+  const finePointer = window.matchMedia(FINE_POINTER_QUERY);
+  const reducedMotion = window.matchMedia(REDUCED_MOTION_QUERY);
+  finePointer.addEventListener("change", onChange);
+  reducedMotion.addEventListener("change", onChange);
+  return () => {
+    finePointer.removeEventListener("change", onChange);
+    reducedMotion.removeEventListener("change", onChange);
+  };
+}
+
+function readPointerPreferences() {
+  return (
+    window.matchMedia(FINE_POINTER_QUERY).matches &&
+    !window.matchMedia(REDUCED_MOTION_QUERY).matches
+  );
+}
 
 export function CustomCursor() {
   const dotRef = useRef<HTMLSpanElement>(null);
   const ringRef = useRef<HTMLSpanElement>(null);
   const glowRef = useRef<HTMLSpanElement>(null);
+  const enabled = useSyncExternalStore(
+    subscribePointerPreferences,
+    readPointerPreferences,
+    () => false,
+  );
 
   useEffect(() => {
-    const finePointer = window.matchMedia("(pointer: fine)");
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (!finePointer.matches || reducedMotion.matches) return;
+    if (!enabled) return;
 
     document.documentElement.classList.add("landing-cursor-enabled");
     const shell = document.querySelector<HTMLElement>(".onboarding-shell");
@@ -51,11 +80,25 @@ export function CustomCursor() {
       window.removeEventListener("pointermove", move);
       cancelAnimationFrame(frame);
     };
-  }, []);
+  }, [enabled]);
 
   return (
     <>
-      <FluidTrail />
+      {enabled ? (
+        <div className="landing-fluid-trail" aria-hidden="true">
+          <LiquidEther
+            colors={["#5ad7ff", "#78f3ff", "#8a6cff"]}
+            resolution={0.35}
+            autoDemo={true}
+            autoSpeed={0.3}
+            autoIntensity={1.5}
+            mouseForce={15}
+            cursorSize={80}
+            autoResumeDelay={500}
+            autoRampDuration={0.8}
+          />
+        </div>
+      ) : null}
       <div className="landing-cursor" aria-hidden="true">
         <span ref={glowRef} className="landing-cursor__glow" />
         <span ref={ringRef} className="landing-cursor__ring" />
