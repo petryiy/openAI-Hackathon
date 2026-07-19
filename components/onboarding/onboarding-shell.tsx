@@ -14,6 +14,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { BootSequence } from "@/components/onboarding/boot-sequence";
 import { CustomCursor } from "@/components/onboarding/custom-cursor";
 
 export type OnboardingPhase = "idle" | "entering" | "create";
@@ -36,7 +37,10 @@ export function useOnboarding() {
   return value;
 }
 
-class PortalBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+class PortalBoundary extends Component<{
+  children: ReactNode;
+  onFailure?: () => void;
+}, { failed: boolean }> {
   state = { failed: false };
 
   static getDerivedStateFromError() {
@@ -45,6 +49,7 @@ class PortalBoundary extends Component<{ children: ReactNode }, { failed: boolea
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("Knowledge Portal fell back to its static rendering.", error, info);
+    this.props.onFailure?.();
   }
 
   render() {
@@ -59,6 +64,7 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
   const [phase, setPhase] = useState<OnboardingPhase>(pathname === "/create" ? "create" : "idle");
   const [reducedMotion, setReducedMotion] = useState(false);
   const [compact, setCompact] = useState(false);
+  const [portalReady, setPortalReady] = useState(pathname === "/create");
 
   useEffect(() => {
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -105,6 +111,9 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
   return (
     <OnboardingContext.Provider value={value}>
       <div className="onboarding-shell" data-phase={phase}>
+        {pathname === "/" ? (
+          <BootSequence ready={portalReady} reducedMotion={reducedMotion} />
+        ) : null}
         <div className="onboarding-atmosphere" aria-hidden="true">
           <div className="onboarding-atmosphere__aurora" />
           <div className="onboarding-atmosphere__grid" />
@@ -115,8 +124,13 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
             <span className="portal-static__core" />
           </div>
         </div>
-        <PortalBoundary>
-          <KnowledgePortal phase={phase} reducedMotion={reducedMotion} compact={compact} />
+        <PortalBoundary onFailure={() => setPortalReady(true)}>
+          <KnowledgePortal
+            phase={phase}
+            reducedMotion={reducedMotion}
+            compact={compact}
+            onReady={() => setPortalReady(true)}
+          />
         </PortalBoundary>
         <div className="onboarding-grain" aria-hidden="true" />
         <div className="onboarding-content">{children}</div>

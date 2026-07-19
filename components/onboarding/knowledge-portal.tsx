@@ -12,6 +12,10 @@ type PortalProps = {
   compact: boolean;
 };
 
+type KnowledgePortalProps = PortalProps & {
+  onReady?: () => void;
+};
+
 const shardPositions: Array<[number, number, number, number]> = [
   [-3.2, 1.8, -1.2, 0.13], [-2.5, -2.2, -0.5, 0.09],
   [-1.6, 2.7, -1.5, 0.08], [2.8, 2.1, -0.8, 0.11],
@@ -25,7 +29,7 @@ function PortalRig({ phase, reducedMotion, compact }: PortalProps) {
   const core = useRef<THREE.Mesh>(null);
   const shell = useRef<THREE.Mesh>(null);
   const camera = useRef<THREE.PerspectiveCamera>(null);
-  const baseX = compact ? 0 : 2.05;
+  const baseX = compact ? 0 : 1.55;
 
   useFrame((state, delta) => {
     const entering = phase === "entering";
@@ -45,7 +49,7 @@ function PortalRig({ phase, reducedMotion, compact }: PortalProps) {
       entering ? 0 : creating ? -2.25 : baseX,
       ease,
     );
-    const targetScale = entering ? 1.6 : creating ? 2.2 : 1;
+    const targetScale = entering ? 1.6 : creating ? 2.2 : compact ? 0.82 : 1;
     group.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), ease);
 
     if (!reducedMotion) {
@@ -115,12 +119,13 @@ function PortalRig({ phase, reducedMotion, compact }: PortalProps) {
   );
 }
 
-export function KnowledgePortal(props: PortalProps) {
+export function KnowledgePortal({ onReady, ...props }: KnowledgePortalProps) {
   return (
     <div className="onboarding-canvas" aria-hidden="true">
       <Canvas
         dpr={[1, 1.5]} frameloop={props.reducedMotion ? "demand" : "always"}
         gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
+        onCreated={onReady}
       >
         <ambientLight intensity={0.25} />
         <PortalRig {...props} />

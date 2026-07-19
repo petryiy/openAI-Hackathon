@@ -75,31 +75,32 @@ export function LandingPage() {
               <span className="landing-cta__label">{entering ? "Opening the story" : "Start an episode"}</span>
               <span className="landing-cta__icon" aria-hidden="true"><i /><b>↗</b></span>
             </button>
-            <p><span aria-hidden="true">●</span> No sign-in · Moonbase demo included</p>
           </div>
 
           <TechMarquee />
         </motion.section>
 
-        <motion.section
-          className="portal-interface"
-          aria-label="The learning loop: story, visualize, choose, and adapt"
-          animate={entering ? { opacity: 0.12, scale: 1.35 } : { opacity: 1, scale: 1 }}
-          transition={{ duration: reducedMotion ? 0.12 : 0.78, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div className="portal-interface__bracket portal-interface__bracket--top" aria-hidden="true" />
-          <div className="portal-interface__bracket portal-interface__bracket--bottom" aria-hidden="true" />
-          {portalNodes.map((node) => (
-            <div className={`portal-node ${node.className}`} key={node.label}>
-              <span>{node.index}</span><strong>{node.label}</strong>
+        <div className="portal-interface-anchor">
+          <motion.section
+            className="portal-interface"
+            aria-label="The learning loop: story, visualize, choose, and adapt"
+            animate={entering ? { opacity: 0.12, scale: 1.35 } : { opacity: 1, scale: 1 }}
+            transition={{ duration: reducedMotion ? 0.12 : 0.78, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="portal-interface__bracket portal-interface__bracket--top" aria-hidden="true" />
+            <div className="portal-interface__bracket portal-interface__bracket--bottom" aria-hidden="true" />
+            {portalNodes.map((node) => (
+              <div className={`portal-node ${node.className}`} key={node.label}>
+                <span>{node.index}</span><strong>{node.label}</strong>
+              </div>
+            ))}
+            <div className="portal-readout" aria-hidden="true">
+              <span>KNOWLEDGE CORE</span><strong>{entering ? "ENTERING" : "ONLINE"}</strong>
             </div>
-          ))}
-          <div className="portal-readout" aria-hidden="true">
-            <span>KNOWLEDGE CORE</span><strong>{entering ? "ENTERING" : "ONLINE"}</strong>
-          </div>
-          <div className="portal-coordinate portal-coordinate--left" aria-hidden="true">X 42.7 / Y 19.4</div>
-          <div className="portal-coordinate portal-coordinate--right" aria-hidden="true">MODEL / PLOT–01</div>
-        </motion.section>
+            <div className="portal-coordinate portal-coordinate--left" aria-hidden="true">X 42.7 / Y 19.4</div>
+            <div className="portal-coordinate portal-coordinate--right" aria-hidden="true">MODEL / PLOT–01</div>
+          </motion.section>
+        </div>
       </div>
 
       <div className="landing-edge-copy" aria-hidden="true">

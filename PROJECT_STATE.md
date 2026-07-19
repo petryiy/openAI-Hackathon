@@ -4,7 +4,7 @@ Last updated: 2026-07-19
 
 ## Completed baseline
 
-- Cinematic single-screen landing experience with a persistent 3D Knowledge Portal, custom cursor, technology marquee, and animated handoff to a dedicated episode-input route
+- Cinematic single-screen landing experience with a persistent 3D Knowledge Portal, shader-driven fluid cursor trail, fast scene-readiness boot sequence, technology marquee, and animated handoff to a dedicated episode-input route
 - Polished Next.js create, generation, player, and recap flow
 - Shared Zod/TypeScript EpisodeSpec and dual-state contracts
 - Complete seeded Moonbase episode and concept-linked character callback

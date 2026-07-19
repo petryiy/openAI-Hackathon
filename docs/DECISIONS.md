@@ -1,5 +1,9 @@
 # Decision log
 
+## 2026-07-19 — Run the landing fluid trail as a bounded second WebGL layer
+
+The Knowledge Portal keeps its React Three Fiber renderer, while the cursor-driven fluid trail uses a separate transparent Three.js renderer so its pressure solver remains isolated from the 3D scene graph. To bound GPU cost, the fluid field renders at 28% viewport resolution with 12 pressure iterations, is desktop fine-pointer only, and disables itself for reduced motion. An independent dye field keeps the visible trail narrow and gives it a controlled ink-like decay without exposing the broader velocity field. The first-visit boot sequence waits for the 3D canvas creation callback, has a short minimum duration, and releases to the CSS fallback after a safety timeout.
+
 ## 2026-07-19 — Keep onboarding visuals persistent across the first route transition
 
 The landing page and `/create` live under one shared route-group layout. Its WebGL Knowledge Portal remains mounted while the foreground route changes, so the CTA can behave like a camera move into the product instead of a page fade. The 3D canvas stays decorative and client-only, has a static CSS fallback, and does not enter the generation or player contract.
