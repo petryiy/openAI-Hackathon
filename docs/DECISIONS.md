@@ -1,5 +1,9 @@
 # Decision log
 
+## 2026-07-19 — Keep onboarding visuals persistent across the first route transition
+
+The landing page and `/create` live under one shared route-group layout. Its WebGL Knowledge Portal remains mounted while the foreground route changes, so the CTA can behave like a camera move into the product instead of a page fade. The 3D canvas stays decorative and client-only, has a static CSS fallback, and does not enter the generation or player contract.
+
 ## 2026-07-18 — Build the seeded learning loop first
 
 We will finish the Moonbase episode, adaptation engine, exact SVG teaching visual, and recap before broad upload/media generation. This protects the product's differentiator and the three-minute demo.

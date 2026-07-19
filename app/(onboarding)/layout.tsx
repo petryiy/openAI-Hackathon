@@ -1,0 +1,6 @@
+import { OnboardingShell } from "@/components/onboarding/onboarding-shell";
+import "./onboarding.css";
+
+export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
+  return <OnboardingShell>{children}</OnboardingShell>;
+}

@@ -4,6 +4,7 @@ Last updated: 2026-07-19
 
 ## Completed baseline
 
+- Cinematic single-screen landing experience with a persistent 3D Knowledge Portal, custom cursor, technology marquee, and animated handoff to a dedicated episode-input route
 - Polished Next.js create, generation, player, and recap flow
 - Shared Zod/TypeScript EpisodeSpec and dual-state contracts
 - Complete seeded Moonbase episode and concept-linked character callback
@@ -32,6 +33,7 @@ Last updated: 2026-07-19
 
 ## Known constraints
 
+- The `/create` route intentionally reuses the previous episode form while the new visual system is established one screen at a time.
 - Local filesystem job storage is for the hackathon prototype, not multi-instance production.
 - Optional PDF/image extraction is not wired into the first vertical slice.
 - Browser speech synthesis is the current narration fallback.

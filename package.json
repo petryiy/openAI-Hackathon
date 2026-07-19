@@ -13,18 +13,26 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "motion": "^12.42.2",
     "next": "16.2.10",
     "openai": "6.48.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",
+    "three": "^0.185.1",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24.10.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "@types/three": "^0.185.1",
     "eslint": "^9.39.0",
     "eslint-config-next": "16.2.10",
+    "postcss": "^8.5.19",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }

@@ -10,6 +10,7 @@ The product name is intentionally still a working title. **Moonbase Last Shot** 
 
 ## What works now
 
+- a cinematic single-screen landing page with a real-time 3D Knowledge Portal, custom desktop cursor, technology marquee, and an animated handoff into episode creation;
 - polished responsive create, generation, player, and recap experiences;
 - six observable generation stages with a saved local job record;
 - a complete offline Moonbase episode in one lunar-rover cockpit;
@@ -71,7 +72,7 @@ Current verified baseline:
 
 ## Demo flow
 
-1. Keep the default projectile-motion prompt and choose **Generate adventure**.
+1. Choose **Start an episode**, keep the default projectile-motion prompt, and choose **Generate adventure**.
 2. Show the concept-to-plot blueprint and both diagnostic decisions.
 3. Enter the cockpit and choose **“Compensate—it will land earlier”** with **Very sure**.
 4. Show the synchronized launch-versus-drop visual and BOLT’s deadpan retraction.
