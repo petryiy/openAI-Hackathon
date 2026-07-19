@@ -159,9 +159,9 @@
 .portal-coordinate--left { left: 10%; }.portal-coordinate--right { right: 8%; }
 .landing-edge-copy { position: absolute; z-index: 10; left: clamp(24px, 4.5vw, 74px); right: clamp(24px, 4.5vw, 74px); bottom: 19px; display: flex; justify-content: space-between; color: #465066; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .45rem; letter-spacing: .16em; }
 
-.landing-cursor, .landing-fluid-trail { display: none; }
+.landing-cursor { display: none; }
 .landing-cursor-enabled .onboarding-atmosphere::after { opacity: 1; }
-.landing-cursor-enabled .landing-fluid-trail { display: block; position: fixed; inset: 0; z-index: 6; pointer-events: none; opacity: .72; mix-blend-mode: screen; }
+.landing-fluid-trail { position: fixed; inset: 0; z-index: 6; pointer-events: none; opacity: .72; mix-blend-mode: screen; }
 .landing-fluid-trail canvas { display: block; width: 100%; height: 100%; }
 .landing-cursor-enabled .onboarding-landing, .landing-cursor-enabled .onboarding-landing button { cursor: none; }
 .landing-cursor-enabled .landing-cursor { display: block; position: fixed; inset: 0; z-index: 999; pointer-events: none; }
@@ -257,7 +257,7 @@
   .landing-cursor-enabled .onboarding-landing,
   .landing-cursor-enabled .onboarding-landing button { cursor: auto; }
   .landing-cursor-enabled .landing-cursor,
-  .landing-cursor-enabled .landing-fluid-trail { display: none; }
+  .landing-fluid-trail { display: none; }
   .landing-cursor-enabled .onboarding-atmosphere::after { opacity: 0; }
   .onboarding-atmosphere__grid { background-size: 54px 54px; opacity: .12; }
   .onboarding-create { padding: 0 16px 42px; }
