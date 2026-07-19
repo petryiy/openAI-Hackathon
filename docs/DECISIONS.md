@@ -1,5 +1,9 @@
 # Decision log
 
+## 2026-07-19 — Treat the create screen as an English-only Episode Forge
+
+The `/create` experience keeps the existing episode-generation request contract but fixes `language` to `en`, limits visible subjects to Calculus, Physics, and Probability, and presents the input as a source signal rather than a generic form. A selected PDF is deliberately local UI state only: it may be selected, replaced, or removed, but is not parsed, persisted, or included in the request. The shared onboarding Portal remains decorative and continuous across the landing-to-create transition.
+
 ## 2026-07-19 — Run the landing fluid trail as a bounded second WebGL layer
 
 The Knowledge Portal keeps its React Three Fiber renderer, while the cursor-driven fluid trail uses a separate transparent Three.js renderer so its pressure solver remains isolated from the 3D scene graph. To bound GPU cost, the fluid field renders at 28% viewport resolution with 12 pressure iterations, is desktop fine-pointer only, and disables itself for reduced motion. An independent dye field keeps the visible trail narrow and gives it a controlled ink-like decay without exposing the broader velocity field. The first-visit boot sequence waits for the 3D canvas creation callback, has a short minimum duration, and releases to the CSS fallback after a safety timeout.

@@ -110,7 +110,11 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
 
   return (
     <OnboardingContext.Provider value={value}>
-      <div className="onboarding-shell" data-phase={phase}>
+      <div
+        className="onboarding-shell"
+        data-phase={phase}
+        data-page={pathname === "/create" ? "create" : "landing"}
+      >
         {pathname === "/" ? (
           <BootSequence ready={portalReady} reducedMotion={reducedMotion} />
         ) : null}
@@ -134,7 +138,7 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
         </PortalBoundary>
         <div className="onboarding-grain" aria-hidden="true" />
         <div className="onboarding-content">{children}</div>
-        {pathname === "/" ? <CustomCursor /> : null}
+        <CustomCursor variant={pathname === "/create" ? "create" : "landing"} />
       </div>
     </OnboardingContext.Provider>
   );

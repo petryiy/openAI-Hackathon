@@ -29,7 +29,7 @@ function readPointerPreferences() {
   );
 }
 
-export function CustomCursor() {
+export function CustomCursor({ variant = "landing" }: { variant?: "landing" | "create" }) {
   const dotRef = useRef<HTMLSpanElement>(null);
   const ringRef = useRef<HTMLSpanElement>(null);
   const glowRef = useRef<HTMLSpanElement>(null);
@@ -50,15 +50,23 @@ export function CustomCursor() {
     let ringX = targetX;
     let ringY = targetY;
     let active = false;
+    let hidden = false;
 
     const move = (event: PointerEvent) => {
       targetX = event.clientX;
       targetY = event.clientY;
-      active = Boolean((event.target as Element | null)?.closest?.("[data-cursor='active']"));
+      const target = event.target as Element | null;
+      active = Boolean(target?.closest?.("[data-cursor='active']"));
+      hidden = Boolean(target?.closest?.("textarea, input, select, [contenteditable='true']"));
+      const violet = Boolean(target?.closest?.("[data-cursor-color='violet']"));
       shell?.style.setProperty("--cursor-x", `${targetX}px`);
       shell?.style.setProperty("--cursor-y", `${targetY}px`);
+      shell?.style.setProperty("--cursor-accent", violet ? "#a687ff" : "#78f3ff");
       dotRef.current?.style.setProperty("transform", `translate3d(${targetX}px, ${targetY}px, 0)`);
       glowRef.current?.style.setProperty("transform", `translate3d(${targetX}px, ${targetY}px, 0)`);
+      dotRef.current?.style.setProperty("opacity", hidden ? "0" : "1");
+      ringRef.current?.style.setProperty("opacity", hidden ? "0" : "1");
+      glowRef.current?.style.setProperty("opacity", hidden ? "0" : "1");
     };
 
     const render = () => {
@@ -77,29 +85,30 @@ export function CustomCursor() {
       document.documentElement.classList.remove("landing-cursor-enabled");
       shell?.style.removeProperty("--cursor-x");
       shell?.style.removeProperty("--cursor-y");
+      shell?.style.removeProperty("--cursor-accent");
       window.removeEventListener("pointermove", move);
       cancelAnimationFrame(frame);
     };
-  }, [enabled]);
+  }, [enabled, variant]);
 
   return (
     <>
       {enabled ? (
-        <div className="landing-fluid-trail" aria-hidden="true">
+        <div className="landing-fluid-trail" data-variant={variant} aria-hidden="true">
           <LiquidEther
             colors={["#5ad7ff", "#78f3ff", "#8a6cff"]}
-            resolution={0.35}
-            autoDemo={true}
+            resolution={variant === "create" ? 0.25 : 0.35}
+            autoDemo={variant === "landing"}
             autoSpeed={0.3}
-            autoIntensity={1.5}
-            mouseForce={15}
-            cursorSize={80}
+            autoIntensity={variant === "create" ? 0.6 : 1.5}
+            mouseForce={variant === "create" ? 7 : 15}
+            cursorSize={variant === "create" ? 46 : 80}
             autoResumeDelay={500}
             autoRampDuration={0.8}
           />
         </div>
       ) : null}
-      <div className="landing-cursor" aria-hidden="true">
+      <div className="landing-cursor" data-variant={variant} aria-hidden="true">
         <span ref={glowRef} className="landing-cursor__glow" />
         <span ref={ringRef} className="landing-cursor__ring" />
         <span ref={dotRef} className="landing-cursor__dot" />

@@ -9,20 +9,9 @@ export default function CreatePage() {
           <span className="onboarding-brand__mark" aria-hidden="true"><i /></span>
           <span>Plot as Proof</span>
         </Link>
-        <span className="onboarding-create__step">01 / Episode source</span>
+        <span className="onboarding-create__step"><i aria-hidden="true" />EPISODE 01 · SOURCE</span>
       </header>
-
-      <section className="onboarding-create__content">
-        <div className="onboarding-create__intro">
-          <p className="landing-eyebrow"><span>01</span> Build the world</p>
-          <h1 id="create-heading">What should the story prove?</h1>
-          <p>
-            Paste one difficult question. The director will turn its underlying relationship into
-            the rules of a playable world.
-          </p>
-        </div>
-        <CreateEpisodeForm />
-      </section>
+      <CreateEpisodeForm />
     </main>
   );
 }

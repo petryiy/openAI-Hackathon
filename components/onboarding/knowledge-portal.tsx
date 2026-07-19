@@ -34,7 +34,7 @@ function PortalRig({ phase, reducedMotion, compact }: PortalProps) {
   useFrame((state, delta) => {
     const entering = phase === "entering";
     const creating = phase === "create";
-    const targetZ = entering ? 2.25 : creating ? 4.5 : 6.4;
+    const targetZ = entering ? 2.25 : creating ? 5.8 : 6.4;
     const ease = 1 - Math.pow(0.001, delta);
 
     if (!camera.current) return;
@@ -46,10 +46,10 @@ function PortalRig({ phase, reducedMotion, compact }: PortalProps) {
     if (!group.current || !rings.current || !core.current || !shell.current) return;
     group.current.position.x = THREE.MathUtils.lerp(
       group.current.position.x,
-      entering ? 0 : creating ? -2.25 : baseX,
+      entering ? 0 : creating ? compact ? 0 : 0.85 : baseX,
       ease,
     );
-    const targetScale = entering ? 1.6 : creating ? 2.2 : compact ? 0.82 : 1;
+    const targetScale = entering ? 1.6 : creating ? compact ? 0.86 : 1.3 : compact ? 0.82 : 1;
     group.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), ease);
 
     if (!reducedMotion) {
