@@ -7,17 +7,19 @@ export function CockpitStage({
   scene,
   dialogueIndex,
   strategy,
+  captionsOn = true,
 }: {
   episode: EpisodeSpec;
   scene: SceneSpec;
   dialogueIndex: number;
   strategy?: TeachingStrategy;
+  captionsOn?: boolean;
 }) {
   if (episode.id !== "moonbase-last-shot") {
-    return <GeneratedDramaStage episode={episode} scene={scene} dialogueIndex={dialogueIndex} strategy={strategy} />;
+    return <GeneratedDramaStage episode={episode} scene={scene} dialogueIndex={dialogueIndex} strategy={strategy} captionsOn={captionsOn} />;
   }
 
-  return <MoonbaseStage episode={episode} scene={scene} dialogueIndex={dialogueIndex} strategy={strategy} />;
+  return <MoonbaseStage episode={episode} scene={scene} dialogueIndex={dialogueIndex} strategy={strategy} captionsOn={captionsOn} />;
 }
 
 function MoonbaseStage({
@@ -25,11 +27,13 @@ function MoonbaseStage({
   scene,
   dialogueIndex,
   strategy,
+  captionsOn,
 }: {
   episode: EpisodeSpec;
   scene: SceneSpec;
   dialogueIndex: number;
   strategy?: TeachingStrategy;
+  captionsOn: boolean;
 }) {
   const dialogue = scene.dialogue[dialogueIndex];
   const speaker = episode.storyBible.characters.find((character) => character.id === dialogue?.characterId);
@@ -72,9 +76,9 @@ function MoonbaseStage({
         <strong>{scene.title}</strong>
       </div>
 
-      {dialogue ? (
+      {captionsOn && dialogue ? (
         <Subtitle speaker={speaker?.name} speakerId={dialogue.characterId} text={dialogue.text} />
-      ) : scene.narration ? <Subtitle text={scene.narration} /> : null}
+      ) : captionsOn && scene.narration ? <Subtitle text={scene.narration} /> : null}
     </div>
   );
 }
@@ -84,11 +88,13 @@ function GeneratedDramaStage({
   scene,
   dialogueIndex,
   strategy,
+  captionsOn,
 }: {
   episode: EpisodeSpec;
   scene: SceneSpec;
   dialogueIndex: number;
   strategy?: TeachingStrategy;
+  captionsOn: boolean;
 }) {
   const dialogue = scene.dialogue[dialogueIndex];
   const speaker = episode.storyBible.characters.find((character) => character.id === dialogue?.characterId);
@@ -135,9 +141,9 @@ function GeneratedDramaStage({
         <strong>{scene.title}</strong>
       </div>
 
-      {dialogue ? (
+      {captionsOn && dialogue ? (
         <Subtitle speaker={speaker?.name} speakerId={dialogue.characterId} text={dialogue.text} />
-      ) : scene.narration ? <Subtitle text={scene.narration} /> : null}
+      ) : captionsOn && scene.narration ? <Subtitle text={scene.narration} /> : null}
     </div>
   );
 }

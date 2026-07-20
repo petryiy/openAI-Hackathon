@@ -36,7 +36,7 @@ function stagedJob(job: GenerationJob, elapsed: number): GenerationJob {
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -51,11 +51,17 @@ export async function GET(
     return NextResponse.json(processingJobView(existing));
   }
 
+  const observeOnly = new URL(request.url).searchParams.get("observe") === "1";
+
   const elapsed = Date.now() - Date.parse(existing.createdAt);
   if (elapsed < 2520) {
     const updated = stagedJob(existing, elapsed);
     await saveJob(updated);
     return NextResponse.json(updated);
+  }
+
+  if (observeOnly) {
+    return NextResponse.json(stagedJob(existing, elapsed));
   }
 
   if (existing.mode === "seeded") {

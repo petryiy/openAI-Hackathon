@@ -1,224 +1,242 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
-import type { EpisodeSpec } from "@/lib/episode/schema";
-import { PIPELINE_STAGES, type GenerationJob } from "@/lib/jobs/schema";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useOnboarding } from "@/components/onboarding/onboarding-shell";
+import {
+  DIRECTOR_STAGES,
+  getGenerationStartDelay,
+  getObservationDelay,
+  isTransientGenerationError,
+} from "@/lib/generation/client-flow";
+import type { GenerationJob } from "@/lib/jobs/schema";
 
 export function GenerationClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { reducedMotion, setExperiencePhase } = useOnboarding();
   const jobId = searchParams.get("jobId");
   const [job, setJob] = useState<GenerationJob | null>(null);
-  const [episode, setEpisode] = useState<EpisodeSpec | null>(null);
-  const [networkError, setNetworkError] = useState("");
+  const [message, setMessage] = useState("");
   const [repairing, setRepairing] = useState(false);
-  const [repairError, setRepairError] = useState("");
+  const [retrying, setRetrying] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const startedAtRef = useRef(0);
+  const driverStartedRef = useRef(false);
+  const navigationStartedRef = useRef(false);
 
-  const poll = useCallback(async () => {
-    if (!jobId) return;
-    try {
-      const response = await fetch(`/api/jobs/${encodeURIComponent(jobId)}`, { cache: "no-store" });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error?.message ?? "Generation job not found.");
-      setJob(data);
-      if (data.status === "complete" && data.episodeId) {
-        const episodeResponse = await fetch(`/api/episodes/${encodeURIComponent(data.episodeId)}`);
-        const episodeData = await episodeResponse.json();
-        if (episodeResponse.ok) setEpisode(episodeData.episode);
-      }
-    } catch (error) {
-      setNetworkError((error as Error).message);
-    }
+  const readJob = useCallback(async (observeOnly: boolean) => {
+    if (!jobId) return null;
+    const suffix = observeOnly ? "?observe=1" : "";
+    const response = await fetch(`/api/jobs/${encodeURIComponent(jobId)}${suffix}`, {
+      cache: "no-store",
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error?.message ?? "Generation job not found.");
+    setMessage("");
+    setJob((current) => current?.status === "complete" ? current : data);
+    return data as GenerationJob;
   }, [jobId]);
 
   useEffect(() => {
-    if (job?.status === "complete" || job?.status === "error") return;
-    const initialTimer = window.setTimeout(() => void poll(), 0);
-    const timer = window.setInterval(() => void poll(), 500);
+    setExperiencePhase("compiling");
+    return () => setExperiencePhase("create");
+  }, [setExperiencePhase]);
+
+  useEffect(() => {
+    if (!jobId) return;
+    startedAtRef.current = Date.now();
+    driverStartedRef.current = false;
+    navigationStartedRef.current = false;
+    let stopped = false;
+    let observationTimer = 0;
+    let driverTimer = 0;
+
+    async function observe() {
+      try {
+        const latest = await readJob(true);
+        if (!latest || stopped || latest.status === "complete" || latest.status === "error") return;
+        observationTimer = window.setTimeout(observe, getObservationDelay(Date.now() - startedAtRef.current));
+      } catch (error) {
+        if (!stopped) {
+          setMessage((error as Error).message);
+          observationTimer = window.setTimeout(observe, 3_000);
+        }
+      }
+    }
+
+    async function initialize() {
+      try {
+        const initial = await readJob(true);
+        if (!initial || stopped) return;
+        if (initial.status !== "complete" && initial.status !== "error" && !driverStartedRef.current) {
+          driverTimer = window.setTimeout(async () => {
+            driverStartedRef.current = true;
+            try {
+              await readJob(false);
+            } catch (error) {
+              if (!stopped) setMessage((error as Error).message);
+            }
+          }, getGenerationStartDelay(initial.createdAt));
+          observationTimer = window.setTimeout(observe, 750);
+        }
+      } catch (error) {
+        setMessage((error as Error).message);
+      }
+    }
+
+    void initialize();
     return () => {
-      window.clearTimeout(initialTimer);
-      window.clearInterval(timer);
+      stopped = true;
+      window.clearTimeout(observationTimer);
+      window.clearTimeout(driverTimer);
     };
-  }, [job?.status, poll]);
+  }, [jobId, readJob]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (startedAtRef.current) setElapsed(Date.now() - startedAtRef.current);
+    }, 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (job?.status !== "complete" || !job.episodeId || navigationStartedRef.current) return;
+    navigationStartedRef.current = true;
+    const destination = `/episode/${job.episodeId}`;
+    async function enterEpisode() {
+      try {
+        const response = await fetch(`/api/episodes/${encodeURIComponent(job!.episodeId!)}`);
+        if (!response.ok) throw new Error("The finished episode could not be loaded.");
+        router.prefetch(destination);
+        setExperiencePhase("episode-ready");
+        window.setTimeout(() => router.replace(destination), reducedMotion ? 180 : 900);
+      } catch (error) {
+        navigationStartedRef.current = false;
+        setMessage((error as Error).message);
+      }
+    }
+    void enterEpisode();
+  }, [job, reducedMotion, router, setExperiencePhase]);
 
   async function repairDraft() {
     if (!jobId) return;
     setRepairing(true);
-    setRepairError("");
+    setMessage("");
     try {
-      const response = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/repair`, {
-        method: "POST",
-      });
+      const response = await fetch(`/api/jobs/${encodeURIComponent(jobId)}/repair`, { method: "POST" });
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error?.message ?? "The saved draft could not be repaired.");
-      }
+      if (!response.ok) throw new Error(data.error?.message ?? "The saved draft could not be repaired.");
       setJob(data);
-      if (data.episodeId) {
-        const episodeResponse = await fetch(
-          `/api/episodes/${encodeURIComponent(data.episodeId)}`,
-        );
-        const episodeData = await episodeResponse.json();
-        if (episodeResponse.ok) setEpisode(episodeData.episode);
-      }
     } catch (error) {
-      setRepairError((error as Error).message);
+      setMessage((error as Error).message);
     } finally {
       setRepairing(false);
     }
   }
 
-  if (!jobId) {
-    return <GenerationError message="No generation job was supplied." />;
+  async function retryGeneration() {
+    if (!job) return;
+    setRetrying(true);
+    setMessage("");
+    try {
+      const response = await fetch("/api/episodes", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sourceInput: job.sourceInput,
+          subject: job.subject,
+          level: job.level,
+          genre: job.genre,
+          language: job.language,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message ?? "A new generation job could not be started.");
+      router.replace(`/generate?jobId=${encodeURIComponent(data.jobId)}`);
+    } catch (error) {
+      setMessage((error as Error).message);
+      setRetrying(false);
+    }
   }
-  if (networkError) {
-    return <GenerationError message={networkError} />;
-  }
+
+  if (!jobId) return <PipelineFailure message="No generation job was supplied." />;
+
+  const activeStage = job?.stageIndex ?? 0;
+  const ready = job?.status === "complete";
+  const failed = job?.status === "error";
 
   return (
-    <section className="generation-layout">
-      <div className="generation-progress-panel">
-        <p className="eyebrow"><span>02</span> Director pipeline</p>
-        <h1>{job?.status === "complete" ? "Your story has a teaching plan." : "Building cause and effect…"}</h1>
-        <p className="generation-intro">
-          Each stage produces evidence for the next. The episode is published only after its story,
-          pedagogy, visualization, and render gates pass.
-        </p>
-        <div className="pipeline-list">
-          {PIPELINE_STAGES.map((stage, index) => {
-            const paused = (job?.stageIndex ?? 0) === index && job?.status === "error";
-            const active = (job?.stageIndex ?? 0) === index && job?.status !== "complete" && !paused;
-            const complete = job?.status === "complete" || (job?.stageIndex ?? -1) > index;
-            return (
-              <div className={`pipeline-step ${active ? "is-active" : ""} ${paused ? "is-paused" : ""} ${complete ? "is-complete" : ""}`} key={stage}>
-                <span className="pipeline-index">{complete ? "✓" : paused ? "!" : String(index + 1).padStart(2, "0")}</span>
-                <div><strong>{stage}</strong><small>{paused ? "Paused" : active ? "Working now" : complete ? "Evidence saved" : "Waiting"}</small></div>
-              </div>
-            );
-          })}
-        </div>
-        <div className="overall-progress" aria-label={`${job?.progress ?? 4}% complete`}>
-          <span style={{ width: `${job?.progress ?? 4}%` }} />
-        </div>
-        <div className="progress-caption"><span>{job?.progress ?? 4}%</span><span>Structured, validated, resumable</span></div>
+    <section className={`director-pipeline ${ready ? "is-ready" : ""} ${failed ? "is-failed" : ""}`} aria-live="polite">
+      <header className="director-pipeline__header">
+        <Link href="/" className="director-pipeline__brand">PLOT AS PROOF</Link>
+        <span>EPISODE 01 · DIRECTOR PIPELINE</span>
+      </header>
+
+      <div className="director-pipeline__copy">
+        <p className="forge-eyebrow">DIRECTOR PIPELINE · LIVE</p>
+        <h1>{ready ? "Episode locked." : failed ? "The signal needs attention." : "Turning knowledge into consequence."}</h1>
+        <p>{ready ? "Opening the first scene now." : failed ? "Your source is safe. Resolve the connection, then continue." : "Story, evidence, and diagnostic choices are being composed as one playable system."}</p>
       </div>
 
-      <div className="blueprint-panel">
-        {job?.status === "error" ? (
-          <div className="generation-error-card">
-            <span className="error-symbol">!</span>
-            <p className="eyebrow">
-              {job.error?.recoverable ? "Recoverable pause" : "Integration pause"}
-            </p>
-            <h2>{generationErrorHeading(job.error?.code)}</h2>
-            <p>{job.error?.message}</p>
-            {repairError ? <p role="alert">{repairError}</p> : null}
-            <div className="button-row">
-              {job.error?.code === "EPISODE_VALIDATION_FAILED" && job.draftId ? (
-                <button
-                  className="primary-button"
-                  type="button"
-                  disabled={repairing}
-                  onClick={repairDraft}
-                >
-                  {repairing ? "Repairing saved draft…" : "Repair saved draft →"}
-                </button>
-              ) : (
-              <Link className="primary-button" href="/episode/moonbase-last-shot">Play offline Moonbase demo →</Link>
-              )}
-              <Link className="text-button" href="/">Use a different source</Link>
-            </div>
-          </div>
-        ) : episode ? (
-          <Blueprint episode={episode} />
-        ) : (
-          <BlueprintSkeleton stage={job?.stageIndex ?? 0} />
-        )}
+      <div className="director-reactor" aria-hidden="true">
+        <span className="director-reactor__halo" />
+        <span className="director-reactor__core" />
+        <span className="director-reactor__scan" />
       </div>
+
+      <ol className="director-stages" aria-label="Episode generation progress">
+        {DIRECTOR_STAGES.map((stage, index) => {
+          const complete = ready || index < activeStage;
+          const active = !failed && !ready && index === activeStage;
+          return (
+            <li key={stage} className={complete ? "is-complete" : active ? "is-active" : failed && index === activeStage ? "is-failed" : ""}>
+              <span>{complete ? "✓" : String(index + 1).padStart(2, "0")}</span>
+              <strong>{stage}</strong>
+              <small>{complete ? "LOCKED" : active ? "IN PROCESS" : failed && index === activeStage ? "INTERRUPTED" : "STANDBY"}</small>
+            </li>
+          );
+        })}
+      </ol>
+
+      <div className="director-pipeline__status">
+        <div className="director-progress"><span style={{ width: `${job?.progress ?? 4}%` }} /></div>
+        <div><strong>{String(Math.round(job?.progress ?? 4)).padStart(3, "0")}%</strong><span>{elapsed > 45_000 && !ready && !failed ? "Still directing — complex sources can take a little longer." : ready ? "EPISODE LOCKED" : "SYSTEMS SYNCHRONIZED"}</span></div>
+      </div>
+
+      {failed ? (
+        <div className="director-error" role="alert">
+          <strong>{generationErrorHeading(job.error?.code)}</strong>
+          <p>{job.error?.message}</p>
+          {message ? <p>{message}</p> : null}
+          <div>
+            {job.error?.code === "EPISODE_VALIDATION_FAILED" && job.draftId ? (
+              <button type="button" onClick={repairDraft} disabled={repairing}>{repairing ? "REPAIRING DRAFT…" : "REPAIR SAVED DRAFT"}</button>
+            ) : isTransientGenerationError(job.error?.code) ? (
+              <button type="button" onClick={retryGeneration} disabled={retrying}>{retrying ? "RESTARTING…" : "TRY AGAIN"}</button>
+            ) : null}
+            <Link href="/create">EDIT SOURCE</Link>
+            <Link href="/episode/moonbase-last-shot">PLAY OFFLINE DEMO</Link>
+          </div>
+        </div>
+      ) : message ? <p className="director-network-note" role="status">{message} Reconnecting…</p> : null}
     </section>
   );
 }
 
 function generationErrorHeading(code?: string) {
   switch (code) {
-    case "OPENAI_QUOTA_EXHAUSTED":
-      return "The API project needs available quota.";
-    case "OPENAI_RATE_LIMITED":
-      return "The director is at capacity.";
+    case "OPENAI_QUOTA_EXHAUSTED": return "The API project needs available quota.";
+    case "OPENAI_RATE_LIMITED": return "The director is at capacity.";
     case "OPENAI_AUTH_FAILED":
-    case "OPENAI_API_KEY_REQUIRED":
-      return "The model connection needs attention.";
-    case "OPENAI_MODEL_ACCESS_DENIED":
-      return "This project cannot access the selected model.";
-    case "EPISODE_VALIDATION_FAILED":
-      return "This draft did not pass the teaching gate.";
-    default:
-      return "Generation paused before publication.";
+    case "OPENAI_API_KEY_REQUIRED": return "The model connection needs attention.";
+    case "OPENAI_MODEL_ACCESS_DENIED": return "This project cannot access the selected model.";
+    case "EPISODE_VALIDATION_FAILED": return "This draft did not pass the teaching gate.";
+    default: return "Generation paused before publication.";
   }
 }
 
-function Blueprint({ episode }: { episode: EpisodeSpec }) {
-  return (
-    <div className="blueprint">
-      <div className="blueprint-heading">
-        <div><p className="eyebrow">Approved blueprint</p><h2>{episode.title}</h2></div>
-        <span className="gate-badge">4 gates passed</span>
-      </div>
-      <div className="blueprint-objective">
-        <small>Learning objective</small>
-        <p>{episode.learningObjective}</p>
-      </div>
-      <div className="blueprint-story">
-        <div><small>One-room premise</small><p>{episode.storyBible.premise}</p></div>
-        <div><small>Clock</small><p>{episode.storyBible.tickingClock}</p></div>
-      </div>
-      <div className="character-strip">
-        {episode.storyBible.characters.map((character, index) => (
-          <div key={character.id}>
-            <span className={`mini-avatar avatar-${index + 1}`}>{character.name.slice(0, 1)}</span>
-            <p><strong>{character.name}</strong><small>{character.role}</small></p>
-          </div>
-        ))}
-      </div>
-      <div className="choice-blueprints">
-        {episode.choiceNodes.map((choice, index) => (
-          <article key={choice.id}>
-            <span>Decision {index + 1}</span>
-            <p>{choice.prompt}</p>
-            <small>{index === 0 ? "Diagnoses the learner's starting model" : "Changes one condition to test adaptation"}</small>
-          </article>
-        ))}
-      </div>
-      <div className="blueprint-rule">
-        <span aria-hidden="true">↗</span>
-        <p><strong>Plot as Proof</strong>{episode.storyBible.runningGag}</p>
-      </div>
-      <Link className="primary-button blueprint-cta" href={`/episode/${episode.id}`}>
-        Enter the episode <span aria-hidden="true">→</span>
-      </Link>
-    </div>
-  );
-}
-
-function BlueprintSkeleton({ stage }: { stage: number }) {
-  return (
-    <div className="blueprint blueprint--skeleton" aria-live="polite">
-      <div className="scanner" />
-      <p className="eyebrow">Live storyboard</p>
-      <h2>{stage < 2 ? "Finding the relationship…" : stage < 4 ? "Making the concept control the plot…" : "Composing the cockpit…"}</h2>
-      <div className="skeleton-block large" />
-      <div className="skeleton-row"><div className="skeleton-block" /><div className="skeleton-block" /></div>
-      <div className="skeleton-block medium" />
-      <p className="skeleton-caption">The director is not generating arbitrary video. It is building a constrained, testable episode specification.</p>
-    </div>
-  );
-}
-
-function GenerationError({ message }: { message: string }) {
-  return (
-    <div className="standalone-error">
-      <h1>We lost the generation job.</h1><p>{message}</p><Link href="/">Return to create</Link>
-    </div>
-  );
+function PipelineFailure({ message }: { message: string }) {
+  return <div className="director-error director-error--standalone" role="alert"><strong>We lost the generation job.</strong><p>{message}</p><Link href="/create">RETURN TO SOURCE</Link></div>;
 }

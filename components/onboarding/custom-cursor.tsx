@@ -10,6 +10,7 @@ const LiquidEther = dynamic(
 
 const FINE_POINTER_QUERY = "(pointer: fine)";
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+const TRAIL_COLORS = ["#5ad7ff", "#78f3ff", "#8a6cff"];
 
 function subscribePointerPreferences(onChange: () => void) {
   const finePointer = window.matchMedia(FINE_POINTER_QUERY);
@@ -29,7 +30,13 @@ function readPointerPreferences() {
   );
 }
 
-export function CustomCursor({ variant = "landing" }: { variant?: "landing" | "create" }) {
+export function CustomCursor({
+  variant = "landing",
+  suspended = false,
+}: {
+  variant?: "landing" | "create" | "compiling";
+  suspended?: boolean;
+}) {
   const dotRef = useRef<HTMLSpanElement>(null);
   const ringRef = useRef<HTMLSpanElement>(null);
   const glowRef = useRef<HTMLSpanElement>(null);
@@ -89,22 +96,28 @@ export function CustomCursor({ variant = "landing" }: { variant?: "landing" | "c
       window.removeEventListener("pointermove", move);
       cancelAnimationFrame(frame);
     };
-  }, [enabled, variant]);
+  }, [enabled]);
 
   return (
     <>
       {enabled ? (
-        <div className="landing-fluid-trail" data-variant={variant} aria-hidden="true">
+        <div
+          className="landing-fluid-trail"
+          data-variant={variant}
+          data-suspended={suspended}
+          aria-hidden="true"
+        >
           <LiquidEther
-            colors={["#5ad7ff", "#78f3ff", "#8a6cff"]}
-            resolution={variant === "create" ? 0.25 : 0.35}
-            autoDemo={variant === "landing"}
+            colors={TRAIL_COLORS}
+            resolution={0.3}
+            autoDemo
             autoSpeed={0.3}
-            autoIntensity={variant === "create" ? 0.6 : 1.5}
-            mouseForce={variant === "create" ? 7 : 15}
-            cursorSize={variant === "create" ? 46 : 80}
+            autoIntensity={1.2}
+            mouseForce={12}
+            cursorSize={64}
             autoResumeDelay={500}
             autoRampDuration={0.8}
+            paused={suspended}
           />
         </div>
       ) : null}

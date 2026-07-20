@@ -53,9 +53,9 @@ export function LandingPage() {
         <motion.section
           className="landing-copy"
           animate={entering
-            ? { opacity: 0, x: -34, scale: 0.96, filter: "blur(14px)" }
-            : { opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
-          transition={{ duration: reducedMotion ? 0.12 : 0.42, delay: entering ? 0.62 : 0 }}
+            ? { opacity: 0, x: -28, scale: 0.975 }
+            : { opacity: 1, x: 0, scale: 1 }}
+          transition={{ duration: reducedMotion ? 0.12 : 0.38, delay: entering ? 0.56 : 0 }}
         >
           <p className="landing-eyebrow"><span>00</span> Adaptive visual learning</p>
           <h1>
@@ -84,8 +84,8 @@ export function LandingPage() {
           <motion.section
             className="portal-interface"
             aria-label="The learning loop: story, visualize, choose, and adapt"
-            animate={entering ? { opacity: 0.12, scale: 1.35 } : { opacity: 1, scale: 1 }}
-            transition={{ duration: reducedMotion ? 0.12 : 0.78, ease: [0.16, 1, 0.3, 1] }}
+            animate={entering ? { opacity: 0.05, scale: 1.08 } : { opacity: 1, scale: 1 }}
+            transition={{ duration: reducedMotion ? 0.12 : 0.62, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="portal-interface__bracket portal-interface__bracket--top" aria-hidden="true" />
             <div className="portal-interface__bracket portal-interface__bracket--bottom" aria-hidden="true" />

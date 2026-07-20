@@ -1,5 +1,9 @@
 # Decision log
 
+## 2026-07-19 - Treat generation and playback as one continuous directed experience
+
+`/generate` remains inside the shared onboarding Portal and separates the request that starts generation from read-only observation polling. A completed job prefetches its episode and enters it automatically; there is no intermediate blueprint confirmation. The episode runtime uses deterministic shot and reading-time data to autoplay between the two diagnostic decisions and the unassisted transfer task. It pauses when the tab is hidden, begins muted with captions, and preserves deterministic API fallbacks and the separate StoryState/LearnerState contracts.
+
 ## 2026-07-19 — Treat the create screen as an English-only Episode Forge
 
 The `/create` experience keeps the existing episode-generation request contract but fixes `language` to `en`, limits visible subjects to Calculus, Physics, and Probability, and presents the input as a source signal rather than a generic form. A selected PDF is deliberately local UI state only: it may be selected, replaced, or removed, but is not parsed, persisted, or included in the request. The shared onboarding Portal remains decorative and continuous across the landing-to-create transition.

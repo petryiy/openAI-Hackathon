@@ -6,6 +6,8 @@ Last updated: 2026-07-19
 
 - Cinematic single-screen landing experience with a persistent 3D Knowledge Portal, shader-driven fluid cursor trail, fast scene-readiness boot sequence, technology marquee, and animated handoff to the Episode Forge
 - Immersive English-only Episode Forge with a reactive source chamber, local-only PDF reference UI, demo signals, constrained STEM parameters, and animated generation handoff
+- Continuous Director Pipeline loading experience with real job observation, automatic episode entry, long-wait and recoverable error states
+- Full-screen cinematic episode player with timed autoplay, pause/skip controls, caption and local voice controls, two-step diagnostic interruptions, and an unassisted transfer stop
 - Polished Next.js create, generation, player, and recap flow
 - Shared Zod/TypeScript EpisodeSpec and dual-state contracts
 - Complete seeded Moonbase episode and concept-linked character callback
@@ -20,7 +22,7 @@ Last updated: 2026-07-19
 - Generic generated-drama stage with dynamic location, clock, props, characters, voices, and scene progress
 - Local generation job/episode persistence and recoverable no-key state
 - Successful live Chinese probability episode generated with GPT-5.6 in 85 seconds and repaired without a second model call
-- 21 focused tests plus typecheck, lint, and production build
+- Focused generation-flow and playback-timing coverage plus the existing contract and adaptation test suite
 - Desktop and 390×844 browser QA, including remediation, changed-condition, transfer, and recap paths
 - Collaboration guidance, decision log, eval baseline, PR template, demo script, and submission checklist
 
@@ -36,5 +38,5 @@ Last updated: 2026-07-19
 
 - Local filesystem job storage is for the hackathon prototype, not multi-instance production.
 - Optional PDF/image extraction is not wired into the first vertical slice.
-- Browser speech synthesis is the current narration fallback.
+- Browser speech synthesis is the optional narration layer; first playback is muted with captions enabled.
 - SVG is the deterministic teaching renderer; unsupported visual families currently use a labelled structured-diagram fallback and the Manim worker remains an adapter follow-up.

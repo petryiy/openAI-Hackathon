@@ -34,26 +34,29 @@ function PortalRig({ phase, reducedMotion, compact }: PortalProps) {
   useFrame((state, delta) => {
     const entering = phase === "entering";
     const creating = phase === "create";
-    const targetZ = entering ? 2.25 : creating ? 5.8 : 6.4;
+    const compiling = phase === "compiling" || phase === "episode-ready";
+    const targetZ = entering ? 2.25 : compiling ? 5.15 : creating ? 5.8 : 6.4;
     const ease = 1 - Math.pow(0.001, delta);
 
     if (!camera.current) return;
     camera.current.position.z = THREE.MathUtils.lerp(camera.current.position.z, targetZ, ease);
-    camera.current.position.x = THREE.MathUtils.lerp(camera.current.position.x, entering || creating ? 0 : state.pointer.x * 0.18, ease);
+    camera.current.position.x = THREE.MathUtils.lerp(camera.current.position.x, entering || creating || compiling ? 0 : state.pointer.x * 0.18, ease);
     camera.current.position.y = THREE.MathUtils.lerp(camera.current.position.y, entering ? 0 : state.pointer.y * 0.12, ease);
     camera.current.lookAt(0, 0, 0);
 
     if (!group.current || !rings.current || !core.current || !shell.current) return;
     group.current.position.x = THREE.MathUtils.lerp(
       group.current.position.x,
-      entering ? 0 : creating ? compact ? 0 : 0.85 : baseX,
+      entering || compiling ? 0 : creating ? compact ? 0 : 0.85 : baseX,
       ease,
     );
-    const targetScale = entering ? 1.6 : creating ? compact ? 0.86 : 1.3 : compact ? 0.82 : 1;
-    group.current.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), ease);
+    const targetScale = entering ? 1.6 : compiling ? (phase === "episode-ready" ? 0.22 : compact ? 0.92 : 1.12) : creating ? compact ? 0.86 : 1.3 : compact ? 0.82 : 1;
+    group.current.scale.setScalar(
+      THREE.MathUtils.lerp(group.current.scale.x, targetScale, ease),
+    );
 
     if (!reducedMotion) {
-      const speed = entering ? 2.4 : 0.22;
+      const speed = entering ? 2.4 : compiling ? 0.62 : 0.22;
       rings.current.rotation.z += delta * speed;
       rings.current.rotation.y += delta * speed * 0.42;
       core.current.rotation.x += delta * (entering ? 1.1 : 0.11);

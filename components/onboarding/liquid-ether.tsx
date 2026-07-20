@@ -44,6 +44,7 @@ export interface LiquidEtherProps {
   takeoverDuration?: number;
   autoResumeDelay?: number;
   autoRampDuration?: number;
+  paused?: boolean;
 }
 
 export function LiquidEther({
@@ -66,6 +67,7 @@ export function LiquidEther({
   takeoverDuration = 0.25,
   autoResumeDelay = 1000,
   autoRampDuration = 0.6,
+  paused = false,
 }: LiquidEtherProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -76,6 +78,8 @@ export function LiquidEther({
   const isVisibleRef = useRef<boolean>(true);
   const resizeRafRef = useRef<number | null>(null);
   const nuclearTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pausedRef = useRef(paused);
+  pausedRef.current = paused;
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -1206,7 +1210,7 @@ export function LiquidEther({
         this._onVisibility = () => {
           if (document.hidden) {
             this.pause();
-          } else {
+          } else if (!pausedRef.current) {
             // LiquidEther is fixed inset-0 (always fills viewport), so it's
             // always "visible" when the document is visible. Force the ref true
             // to avoid a race where IntersectionObserver hasn't fired yet.
@@ -1224,7 +1228,7 @@ export function LiquidEther({
         };
         this._onContextRestored = () => {
           console.log('[LiquidEther] WebGL context restored');
-          this.start();
+          if (!pausedRef.current) this.start();
         };
         canvas.addEventListener('webglcontextlost', this._onContextLost);
         canvas.addEventListener('webglcontextrestored', this._onContextRestored);
@@ -1327,7 +1331,7 @@ export function LiquidEther({
     };
     applyOptionsFromProps();
 
-    webgl.start();
+    if (!pausedRef.current) webgl.start();
 
     // IntersectionObserver to pause rendering when not visible
     const io = new IntersectionObserver(
@@ -1336,7 +1340,7 @@ export function LiquidEther({
         const visible = entry.isIntersecting && entry.intersectionRatio > 0;
         isVisibleRef.current = visible;
         if (!webglRef.current) return;
-        if (visible && !document.hidden) {
+        if (visible && !document.hidden && !pausedRef.current) {
           webglRef.current.start();
         } else if (!visible) {
           // Only pause when truly not intersecting. When intersecting but
@@ -1401,6 +1405,16 @@ export function LiquidEther({
     autoResumeDelay,
     autoRampDuration,
   ]);
+
+  useEffect(() => {
+    const webgl = webglRef.current;
+    if (!webgl) return;
+    if (paused) {
+      webgl.pause();
+    } else if (isVisibleRef.current && !document.hidden) {
+      webgl.start();
+    }
+  }, [paused]);
 
   useEffect(() => {
     const webgl = webglRef.current;

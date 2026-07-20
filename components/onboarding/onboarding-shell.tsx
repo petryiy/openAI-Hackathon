@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   Component,
   createContext,
+  startTransition,
   type ErrorInfo,
   type ReactNode,
   useCallback,
@@ -17,12 +18,13 @@ import {
 import { BootSequence } from "@/components/onboarding/boot-sequence";
 import { CustomCursor } from "@/components/onboarding/custom-cursor";
 
-export type OnboardingPhase = "idle" | "entering" | "create";
+export type OnboardingPhase = "idle" | "entering" | "create" | "compiling" | "episode-ready";
 
 type OnboardingContextValue = {
   phase: OnboardingPhase;
   reducedMotion: boolean;
   startJourney: () => void;
+  setExperiencePhase: (phase: OnboardingPhase) => void;
 };
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
@@ -61,10 +63,12 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [phase, setPhase] = useState<OnboardingPhase>(pathname === "/create" ? "create" : "idle");
+  const [phase, setPhase] = useState<OnboardingPhase>(
+    pathname === "/create" ? "create" : pathname === "/generate" ? "compiling" : "idle",
+  );
   const [reducedMotion, setReducedMotion] = useState(false);
   const [compact, setCompact] = useState(false);
-  const [portalReady, setPortalReady] = useState(pathname === "/create");
+  const [portalReady, setPortalReady] = useState(pathname !== "/");
 
   useEffect(() => {
     const motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -83,8 +87,13 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (pathname === "/") router.prefetch("/create");
+  }, [pathname, router]);
+
+  useEffect(() => {
     const frame = requestAnimationFrame(() => {
       if (pathname === "/create") setPhase("create");
+      if (pathname === "/generate") setPhase("compiling");
       if (pathname === "/") setPhase("idle");
     });
     return () => cancelAnimationFrame(frame);
@@ -100,11 +109,13 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
   const startJourney = useCallback(() => {
     if (phase !== "idle") return;
     setPhase("entering");
-    timerRef.current = setTimeout(() => router.push("/create"), reducedMotion ? 160 : 1050);
+    timerRef.current = setTimeout(() => {
+      startTransition(() => router.push("/create"));
+    }, reducedMotion ? 160 : 1000);
   }, [phase, reducedMotion, router]);
 
   const value = useMemo(
-    () => ({ phase, reducedMotion, startJourney }),
+    () => ({ phase, reducedMotion, startJourney, setExperiencePhase: setPhase }),
     [phase, reducedMotion, startJourney],
   );
 
@@ -113,7 +124,7 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
       <div
         className="onboarding-shell"
         data-phase={phase}
-        data-page={pathname === "/create" ? "create" : "landing"}
+        data-page={pathname === "/create" ? "create" : pathname === "/generate" ? "generate" : "landing"}
       >
         {pathname === "/" ? (
           <BootSequence ready={portalReady} reducedMotion={reducedMotion} />
@@ -136,9 +147,13 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
             onReady={() => setPortalReady(true)}
           />
         </PortalBoundary>
+        <div className="onboarding-transition-veil" aria-hidden="true" />
         <div className="onboarding-grain" aria-hidden="true" />
         <div className="onboarding-content">{children}</div>
-        <CustomCursor variant={pathname === "/create" ? "create" : "landing"} />
+        <CustomCursor
+          variant={pathname === "/" ? "landing" : pathname === "/create" ? "create" : "compiling"}
+          suspended={phase === "entering" || phase === "episode-ready"}
+        />
       </div>
     </OnboardingContext.Provider>
   );
