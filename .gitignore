@@ -18,6 +18,8 @@ public/generated/
 # test/build output
 coverage/
 *.tsbuildinfo
+__pycache__/
+*.pyc
 
 # OS/editor
 .DS_Store

@@ -1,0 +1,4 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:12.100
+Choose two points on the curve. The slope of the secant through them is the average rate of change over that interval. As the second point approaches the first, the interval shrinks and the secant settles toward a tangent.

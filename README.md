@@ -1,8 +1,8 @@
 # Plot as Proof (working title)
 
-An adaptive visual-learning mini-drama for OpenAI Build Week’s Education track.
+An adaptive visual calculus lesson for OpenAI Build Week’s Education track.
 
-Paste an abstract STEM question and the product turns it into a playable bottle episode. The concept controls the plot, the learner makes two meaningful decisions, and answer confidence selects a different teaching representation: `advance`, `verify`, or `remediate`.
+Paste a derivative question and the product teaches it through a segmented visual explanation, pauses twice to diagnose understanding, then asks the learner to complete a difference quotient by hand before an unassisted transfer task.
 
 > Story creates a reason to care. Visualization makes the relationship understandable. Interaction checks what the learner noticed. Adaptation chooses what to show next.
 
@@ -10,11 +10,19 @@ The product name is intentionally still a working title. **Moonbase Last Shot** 
 
 ## What works now
 
+- a new derivative-first `LessonSpec` flow as the default product path;
+- a roughly 68-second, five-section seeded Manim explanation with committed ElevenLabs English narration and transcript controls;
+- exactly two diagnostic pauses with direct answer submission;
+- four deterministic difference-quotient steps and one unassisted cubic transfer problem;
+- a safe degree-three polynomial parser with exact rational normalization and misconception-specific remediation;
+- eight code-owned Manim templates behind an isolated Docker renderer, with content-addressed output and exact responsive SVG fallback;
+- desktop and 390×844 lesson QA covering confident error, remediation, guided recovery, transfer, and recap;
+
 - a cinematic single-screen landing page with a real-time 3D Knowledge Portal, custom desktop cursor, technology marquee, and an animated handoff into episode creation;
 - polished responsive create, generation, player, and recap experiences;
 - six observable generation stages with a saved local job record;
 - a complete offline Moonbase episode in one lunar-rover cockpit;
-- exactly two story decisions, each followed by confidence capture;
+- the legacy Moonbase episode retains two story decisions with confidence capture;
 - separate `StoryState` and `LearnerState` objects;
 - deterministic `advance`, `verify`, and `remediate` policy;
 - a confident-error branch that compares horizontal launch with free fall;
@@ -40,7 +48,29 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The default projectile-motion sample runs end to end with no external services.
+Open [http://localhost:3000](http://localhost:3000), choose **Start an episode**, and load the derivative sample. The seeded calculus lesson, committed Manim videos, grading, and English narration run without external services.
+
+Optional Manim worker:
+
+```bash
+docker build -t plot-as-proof-renderer renderer
+docker run --rm --name plot-proof-renderer --read-only --tmpfs /tmp:rw,uid=1000,gid=1000,size=128m --tmpfs /work:rw,uid=1000,gid=1000,size=512m \
+  --cap-drop ALL --pids-limit 128 --memory 1g --cpus 1.5 \
+  -v "$PWD/.data/lesson-assets:/output" -p 127.0.0.1:8787:8000 plot-as-proof-renderer
+```
+
+Set `MANIM_RENDERER_URL=http://127.0.0.1:8787` for new supported lessons. The renderer accepts only allowlisted template JSON; it never executes model-authored Python.
+For a hardened deployment, put both the web worker and renderer on the same internal Docker network, do not publish the renderer port, and use its internal service address.
+
+Optional natural narration for newly generated polynomial lessons:
+
+```bash
+ELEVEN_LABS=your_server_only_key
+ELEVENLABS_VOICE_ID=JBFqnCBsd6RMkjVDRZzb
+ELEVENLABS_MODEL=eleven_multilingual_v2
+```
+
+The reviewed default is the English `George` voice with stable educational pacing. The key remains server-only. Regenerate the committed seeded audio with `renderer/generate_seed_audio.sh`; without a key, the checked-in audio still keeps the demo fully offline.
 
 To enable new-topic generation:
 
@@ -61,7 +91,7 @@ pnpm build
 
 Current verified baseline:
 
-- 21 tests pass;
+- 45 tests pass;
 - TypeScript passes with strict mode;
 - ESLint passes;
 - Next.js production build succeeds;
@@ -70,15 +100,14 @@ Current verified baseline:
 - unsupported topics without a key reach a clear, recoverable pause;
 - a real Chinese probability episode completes through GPT-5.6 in 85 seconds, publishes after recorded local repair, and plays through transfer and recap.
 
-## Demo flow
+## Primary demo flow
 
-1. Choose **Start an episode**, keep the default projectile-motion prompt, and choose **Generate adventure**.
-2. Show the concept-to-plot blueprint and both diagnostic decisions.
-3. Enter the cockpit and choose **“Compensate—it will land earlier”** with **Very sure**.
-4. Show the synchronized launch-versus-drop visual and BOLT’s deadpan retraction.
-5. At the gravity fault, choose **Farther** with **Very sure**.
-6. Complete the unassisted table-edge transfer task.
-7. Show how the recap records the actual path without claiming mastery.
+1. Load “Why does the derivative represent instantaneous rate of change?” and generate the visual lesson.
+2. Play the first two narrated sections and choose the confident wrong answer at the secant checkpoint.
+3. Show the limit-definition repair, emphasizing that `h → 0` is a process rather than immediate substitution.
+4. Complete the worked example and second diagnostic checkpoint.
+5. Enter the four difference-quotient steps; repeat an error twice to trigger cancellation remediation.
+6. Recover, submit the unassisted cubic transfer answer, and show the cautious evidence recap.
 
 The timed voiceover is in [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md).
 
@@ -86,24 +115,32 @@ The timed voiceover is in [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md).
 
 ```text
 Create form
-   │ POST /api/episodes
+   │ POST /api/lessons
    ▼
-GenerationJob ── GET /api/jobs/:id ──► stages / blueprint / recoverable error
+LessonJob ── GET /api/lesson-jobs/:id ──► status / recoverable error
    │
-   ├─ known demo concept ─► seeded validated EpisodeSpec
-   └─ API key present ────► GPT-5.6 Responses API ─► EpisodeDraft
-                                                     │ deterministic shots
-                                                     │ saved + repaired draft
-                                                     ▼
-                                              EpisodeSpec validation
-                                                     │
-Episode player ◄── GET /api/episodes/:id ◄───────────┘
+   ├─ supported derivative input ─► deterministic extraction + validation
+   └─ unsupported input ──────────► UNSUPPORTED_CALCULUS_SCOPE + usable sample
+                                      │
+                                      ▼
+                          validated LessonSpec + assets
+                                      │
+Lesson player ◄── GET /api/lessons/:id
    │
-   ├─ POST /choices ─► deterministic director ─► story + learner state
-   └─ POST /transfer ─► independent result ─► cautious recap
+   ├─ exactly two diagnostic checkpoints
+   ├─ POST /attempts ─► exact AST grading ─► targeted remediation
+   └─ POST /transfer ─► independent evidence ─► cautious recap
+
+Optional renderer: allowlisted JSON ─► isolated Manim worker ─► MP4/poster/VTT
+                   renderer unavailable ─► deterministic SVG fallback
 ```
 
 Important locations:
+
+- `lib/lesson/schema.ts` — primary lesson, state, checkpoint, exercise, and asset contracts;
+- `lib/math/polynomial.ts` and `lib/lesson/grading.ts` — safe parsing and deterministic grading;
+- `components/lesson/` — segmented lesson player and responsive deterministic visuals;
+- `renderer/` — isolated Manim service and eight allowlisted templates;
 
 - `lib/episode/schema.ts` — shared Zod/TypeScript contracts;
 - `lib/episode/moonbase.ts` — release-blocking seeded episode;
@@ -120,7 +157,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for boundaries and [`PRODUCT_
 
 ## How GPT-5.6 and Codex are used
 
-GPT-5.6 is the content-planning provider for new questions. It returns a structured `EpisodeDraft` through the Responses API; the server plans shots, saves a repairable draft, applies bounded recorded repairs, and validates the final `EpisodeSpec` before the fixed UI can render it. Runtime branching remains deterministic so the demo never points to a nonexistent scene or exposes hidden reasoning. Official references: [GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol) and [Models](https://developers.openai.com/api/docs/models).
+The derivative vertical slice does not require a model: math extraction, validation, grading, adaptation, and visual parameters are deterministic. The retained legacy episode generator can use GPT-5.6 for structured content planning, but model output never supplies mathematical truth or executable renderer code. Official references: [GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol) and [Models](https://developers.openai.com/api/docs/models).
 
 Codex was used as the primary product-engineering collaborator for specification synthesis, architecture, UI implementation, adaptation logic, test creation, production-build repair, and browser QA. The repository’s `AGENTS.md`, decision log, state file, evals, and PR template make those improvements durable across both teammates’ future Codex tasks.
 
@@ -136,8 +173,8 @@ Codex was used as the primary product-engineering collaborator for specification
 ## Deliberate hackathon limitations
 
 - Optional PDF/image extraction is represented in the UI but is not wired into the first vertical slice; pasted text is the supported path.
-- Browser speech synthesis is a development fallback, not production character audio.
-- SVG provides deterministic projectile and probability visual families; other concepts currently use a structured-diagram fallback, and the isolated Manim worker remains a follow-up adapter.
+- Dynamic derivative narration uses ElevenLabs when `ELEVEN_LABS` is configured; failures retain captions and deterministic visuals. The seeded lesson ships committed ElevenLabs audio for offline use.
+- The seeded lesson ships committed Manim MP4s. The isolated worker is optional for new parameterized lessons; without it, those lessons render through the deterministic SVG visual.
 - Local filesystem storage is not suitable for multi-instance production deployment.
 - Authentication, classrooms, payments, editing, and long-document ingestion are intentionally out of scope.
 

@@ -1,5 +1,17 @@
 # Decision log
 
+## 2026-07-20 — Use ElevenLabs for English lesson narration
+
+The primary calculus flow uses ElevenLabs `eleven_multilingual_v2` with the reviewed `George` voice for stable, natural educational narration. The API key remains server-only, generated audio is content-addressed and cached, and the five seeded clips are committed so the core lesson still works offline. Captions remain authoritative fallback content when the provider is absent or unavailable. The player treats narration as the timing clock and adjusts silent Manim playback slightly when generated speech duration differs from the committed video.
+
+## 2026-07-20 — Make the derivative lesson the primary learning loop
+
+The default create flow now creates a lesson job, observes its read-only status, and opens a validated segmented `LessonSpec` instead of treating dialogue autoplay as the teaching mechanism. Generation runs in a server-owned post-response task; polling never triggers work. The first vertical slice supports the derivative as instantaneous change, exactly two direct-submit diagnostic pauses, four deterministically graded difference-quotient steps, targeted remediation, and one unassisted transfer task. The existing episode runtime remains available only as a legacy compatibility path.
+
+## 2026-07-20 — Keep mathematical truth and executable rendering outside the model boundary
+
+Polynomial input is parsed by an allowlisted expression grammar and normalized with exact rational coefficients; no `eval` or model judgment is used for correctness. The optional Manim 0.20.1 service owns eight reviewed templates and accepts only strict numeric JSON. It runs outside Next.js, caches content-addressed assets, and falls back to code-owned SVG when unavailable. Seeded English Manim videos and narration are checked-in assets so the core lesson requires no API key, Docker daemon, or browser speech synthesis at playback time.
+
 ## 2026-07-19 - Treat generation and playback as one continuous directed experience
 
 `/generate` remains inside the shared onboarding Portal and separates the request that starts generation from read-only observation polling. A completed job prefetches its episode and enters it automatically; there is no intermediate blueprint confirmation. The episode runtime uses deterministic shot and reading-time data to autoplay between the two diagnostic decisions and the unassisted transfer task. It pauses when the tab is hidden, begins muted with captions, and preserves deterministic API fallbacks and the separate StoryState/LearnerState contracts.
@@ -26,7 +38,7 @@ The initial cockpit, characters, motion, and projectile visualization are web-na
 
 ## 2026-07-18 — Rules own branch reliability
 
-GPT-5.6 may author validated episode content, but the runtime adaptation policy remains deterministic for the MVP. Confidence plus option correctness selects `advance`, `verify`, or `remediate`; the model is not allowed to invent a nonexistent branch.
+In the legacy episode runtime, GPT-5.6 may author validated episode content, but the adaptation policy remains deterministic. Confidence plus option correctness selects `advance`, `verify`, or `remediate`; the model is not allowed to invent a nonexistent branch. The primary derivative lesson no longer asks for confidence.
 
 ## 2026-07-18 — API key is optional for the demo
 

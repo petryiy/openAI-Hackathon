@@ -1,6 +1,18 @@
 # Project state
 
-Last updated: 2026-07-19
+Last updated: 2026-07-20
+
+## Current primary flow
+
+- Derivative-first visual lesson from pasted input, with an explicit unsupported-scope response for non-derivative topics
+- New validated `LessonSpec` plus separately persisted `LessonStoryState` and `LessonLearnerState`
+- Five roughly 68-second total seeded teaching segments with committed Manim MP4s, ElevenLabs English narration, captions/transcripts, synchronized playback speed, replay, and reduced-motion SVG fallback
+- Exactly two diagnostic pauses with direct answer submission and deterministic remediation selection
+- Four-step difference-quotient practice with a safe polynomial parser, exact rational normalization, misconception codes, and second-error remediation
+- One independently graded unassisted cubic transfer task and cautious evidence recap
+- Eight allowlisted Manim 0.20.1 templates in an isolated Docker service, content-addressed caching, strict JSON input, and responsive deterministic SVG fallback
+- New lesson, job, attempt, transfer, and rendered-asset APIs; the previous episode routes remain as a legacy path
+- 45 tests passing, strict TypeScript passing, webpack production build passing, and desktop plus 390×844 browser QA completed
 
 ## Completed baseline
 
@@ -11,7 +23,7 @@ Last updated: 2026-07-19
 - Polished Next.js create, generation, player, and recap flow
 - Shared Zod/TypeScript EpisodeSpec and dual-state contracts
 - Complete seeded Moonbase episode and concept-linked character callback
-- Two diagnostic choices with confidence-aware deterministic adaptation
+- The legacy Moonbase episode retains two confidence-aware diagnostic choices
 - Core, remediation, verification, and gravity SVG visualizations
 - Unassisted transfer task and cautious evidence recap
 - Server-only GPT-5.6 structured-output integration with an API-compatible model boundary
@@ -28,9 +40,10 @@ Last updated: 2026-07-19
 
 ## Next
 
-- Wire one-page image/PDF extraction or remove the optional attachment control before submission
-- Expand deterministic visual templates beyond the probability and projectile-motion families
-- Add isolated Manim and production TTS/image-provider adapters if time permits
+- Run and capture the Docker Manim renderer on the final demo machine, then publish its cached MP4/poster/VTT assets
+- Replace the process-local post-response lesson worker with a durable external job queue before multi-instance deployment
+- Extend the typed visual grammar to limits and definite integrals only after the derivative learning eval passes
+- Remove the optional PDF control from the calculus create experience or wire extraction
 - Record, review, and publish the three-minute demo
 - Add the Codex `/feedback` session ID and finish the submission checklist
 
@@ -38,5 +51,6 @@ Last updated: 2026-07-19
 
 - Local filesystem job storage is for the hackathon prototype, not multi-instance production.
 - Optional PDF/image extraction is not wired into the first vertical slice.
-- Browser speech synthesis is the optional narration layer; first playback is muted with captions enabled.
-- SVG is the deterministic teaching renderer; unsupported visual families currently use a labelled structured-diagram fallback and the Manim worker remains an adapter follow-up.
+- Generated lesson jobs and rendered media still use local filesystem persistence.
+- Dynamic polynomial lessons generate and cache ElevenLabs narration when a server-only key is configured; provider failure falls back to captions. The offline derivative lesson uses committed ElevenLabs audio.
+- The seeded lesson ships committed Manim MP4s. New parameterized lessons use the exact responsive SVG representation when `MANIM_RENDERER_URL` is unavailable.

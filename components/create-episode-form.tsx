@@ -4,10 +4,10 @@ import { useRouter } from "next/navigation";
 import { type CSSProperties, type DragEvent, type FormEvent, type KeyboardEvent, useRef, useState } from "react";
 import { useOnboarding } from "@/components/onboarding/onboarding-shell";
 import {
-  createEpisodePayload, DETECTIVE_SAMPLE, type EpisodeGenre, type EpisodeLevel,
-  type EpisodeSubject, getSignalState, isPdfReference, LEVELS, MAX_SOURCE_LENGTH,
-  MOONBASE_SAMPLE, SUBJECTS,
+  type EpisodeLevel, getSignalState, isPdfReference, LEVELS, MAX_SOURCE_LENGTH,
 } from "@/lib/create/episode-source";
+import { DERIVATIVE_SAMPLE } from "@/lib/lesson/constants";
+import { LESSON_PIPELINE_STAGES, type LessonJob } from "@/lib/lesson/jobs";
 
 const SIGNAL_LABELS = {
   awaiting: "AWAITING SOURCE",
@@ -22,15 +22,14 @@ export function CreateEpisodeForm() {
   const { reducedMotion } = useOnboarding();
   const fileRef = useRef<HTMLInputElement>(null);
   const [sourceInput, setSourceInput] = useState("");
-  const [subject, setSubject] = useState<EpisodeSubject>("Physics");
   const [level, setLevel] = useState<EpisodeLevel>("Secondary school");
-  const [genre, setGenre] = useState<EpisodeGenre>("sci_fi");
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfError, setPdfError] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [activeSample, setActiveSample] = useState<"moonbase" | "detective" | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [generationStage, setGenerationStage] = useState("");
   const signalState = getSignalState(sourceInput);
   const ready = signalState === "ready";
 
@@ -55,13 +54,9 @@ export function CreateEpisodeForm() {
     setActiveSample(kind);
     setError("");
     if (kind === "moonbase") {
-      setSourceInput(MOONBASE_SAMPLE);
-      setSubject("Physics");
-      setGenre("sci_fi");
+      setSourceInput(DERIVATIVE_SAMPLE);
     } else {
-      setSourceInput(DETECTIVE_SAMPLE);
-      setSubject("Probability");
-      setGenre("detective");
+      setSourceInput("Explain derivatives and instantaneous rate of change using f(x)=x^3-2x at x=1.");
     }
     window.setTimeout(() => setActiveSample(null), reducedMotion ? 0 : 720);
   }
@@ -71,21 +66,24 @@ export function CreateEpisodeForm() {
     if (!ready || submitting) return;
     setError("");
     setSubmitting(true);
+    setGenerationStage(LESSON_PIPELINE_STAGES[0]);
     const animationStarted = performance.now();
     try {
-      const response = await fetch("/api/episodes", {
+      const response = await fetch("/api/lessons", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify(createEpisodePayload({ sourceInput, subject, level, genre })),
+        body: JSON.stringify({ sourceInput, locale: "en", level: level === "Early university" ? "early_university" : "secondary" }),
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message ?? "Could not start generation.");
+      const job = await observeLessonJob(data.jobId, setGenerationStage);
       const minimumTransition = reducedMotion ? 160 : 1050;
       await wait(Math.max(0, minimumTransition - (performance.now() - animationStarted)));
-      router.push(`/generate?jobId=${encodeURIComponent(data.jobId)}`);
+      router.push(`/lesson/${encodeURIComponent(job.lessonId!)}`);
     } catch (caught) {
       setError((caught as Error).message);
       setSubmitting(false);
+      setGenerationStage("");
     }
   }
 
@@ -97,7 +95,7 @@ export function CreateEpisodeForm() {
   }
 
   return (
-    <form className="episode-forge" data-genre={genre} data-signal={signalState}
+    <form className="episode-forge" data-genre="sci_fi" data-signal={signalState}
       data-launching={submitting && !error ? "true" : "false"} onSubmit={submit}>
       <div className="forge-reactor" aria-hidden="true">
         <span className="forge-reactor__axis forge-reactor__axis--horizontal" />
@@ -128,7 +126,7 @@ export function CreateEpisodeForm() {
               maxLength={MAX_SOURCE_LENGTH}
               onChange={(event) => { setSourceInput(event.target.value.slice(0, MAX_SOURCE_LENGTH)); setError(""); }}
               onKeyDown={handleSourceKeyDown}
-              placeholder="Paste a question, problem, or concept you want to finally understand..." rows={7} />
+              placeholder="Enter a derivative question, for example: Why does a derivative represent instantaneous rate of change?" rows={7} />
             <span className="source-console__length">SIGNAL LENGTH {String(sourceInput.length).padStart(4, "0")} / {MAX_SOURCE_LENGTH}</span>
           </div>
         </div>
@@ -161,12 +159,12 @@ export function CreateEpisodeForm() {
               <button type="button" className={activeSample === "moonbase" ? "is-pulsing" : ""}
                 disabled={submitting} data-cursor="active" onClick={() => applySample("moonbase")}>
                 <span className="demo-signal__visual demo-signal__visual--orbit" aria-hidden="true"><i /><i /></span>
-                <span><strong>Moonbase trajectory</strong><small>Physics · Sci-fi mission</small></span><b aria-hidden="true">01</b>
+                <span><strong>Secant to tangent</strong><small>Calculus · Instantaneous change</small></span><b aria-hidden="true">01</b>
               </button>
               <button type="button" className={activeSample === "detective" ? "is-pulsing" : ""}
                 disabled={submitting} data-cursor="active" data-cursor-color="violet" onClick={() => applySample("detective")}>
                 <span className="demo-signal__visual demo-signal__visual--evidence" aria-hidden="true"><i /><i /><i /></span>
-                <span><strong>The false-positive case</strong><small>Probability · Detective mystery</small></span><b aria-hidden="true">02</b>
+                <span><strong>Cubic derivative</strong><small>Calculus · Restricted polynomial</small></span><b aria-hidden="true">02</b>
               </button>
             </div>
           </div>
@@ -178,11 +176,9 @@ export function CreateEpisodeForm() {
           <div><span>DIRECTOR CONSOLE</span><h2 id="parameters-heading">World parameters</h2></div>
           <p><i aria-hidden="true" />03 SYSTEMS ONLINE</p>
         </header>
-        <fieldset className="parameter-block parameter-subject" disabled={submitting}>
+        <fieldset className="parameter-block parameter-subject parameter-fixed">
           <legend><span>01</span> Subject</legend>
-          <div className="subject-selector">{SUBJECTS.map((option) =>
-            <button key={option} type="button" aria-pressed={subject === option} data-cursor="active"
-              onClick={() => setSubject(option)}>{option}</button>)}</div>
+          <div className="subject-selector"><button type="button" aria-pressed="true" disabled>Calculus · Derivatives</button></div>
         </fieldset>
         <fieldset className="parameter-block parameter-level" disabled={submitting}>
           <legend><span>02</span> Learning level</legend>
@@ -192,17 +188,12 @@ export function CreateEpisodeForm() {
               data-cursor="active" onClick={() => setLevel(option)}><i aria-hidden="true" /><span>{option}</span></button>)}
           </div>
         </fieldset>
-        <fieldset className="parameter-block parameter-world" disabled={submitting}>
+        <fieldset className="parameter-block parameter-world parameter-fixed">
           <legend><span>03</span> Story world</legend>
           <div className="world-selector">
-            <button type="button" aria-pressed={genre === "sci_fi"} data-cursor="active" onClick={() => setGenre("sci_fi")}>
+            <button type="button" aria-pressed="true" disabled>
               <span className="world-card__visual world-card__visual--scifi" aria-hidden="true"><i /><i /><i /></span>
-              <span className="world-card__copy"><strong>SCI-FI MISSION</strong><small>A failing system. One concept is the way out.</small></span><b>01</b>
-            </button>
-            <button type="button" aria-pressed={genre === "detective"} data-cursor="active" data-cursor-color="violet"
-              onClick={() => setGenre("detective")}>
-              <span className="world-card__visual world-card__visual--detective" aria-hidden="true"><i /><i /><i /></span>
-              <span className="world-card__copy"><strong>DETECTIVE MYSTERY</strong><small>Conflicting evidence. One relationship reveals the truth.</small></span><b>02</b>
+              <span className="world-card__copy"><strong>VISUAL CALCULUS LAB</strong><small>Story motivates. Deterministic visuals explain.</small></span><b>01</b>
             </button>
           </div>
         </fieldset>
@@ -212,8 +203,8 @@ export function CreateEpisodeForm() {
         <div className="forge-launch">
           <div className="forge-launch__rail" aria-hidden="true"><i /><i /><i /></div>
           <button type="submit" disabled={!ready || submitting} data-cursor="active" className="forge-launch__button">
-            <span><small>{submitting ? "COMPILING SOURCE" : error ? "SYSTEM RECOVERED" : ready ? "DIRECTOR READY" : "SOURCE REQUIRED"}</small>
-              <strong>{error ? "Try again" : "Generate adventure"}</strong></span><i aria-hidden="true"><b>→</b></i>
+            <span><small>{submitting ? generationStage || "COMPILING SOURCE" : error ? "SYSTEM RECOVERED" : ready ? "DIRECTOR READY" : "SOURCE REQUIRED"}</small>
+              <strong>{error ? "Try again" : "Generate visual lesson"}</strong></span><i aria-hidden="true"><b>→</b></i>
           </button>
           <p>CMD / CTRL + ENTER TO LAUNCH</p>
         </div>
@@ -224,4 +215,18 @@ export function CreateEpisodeForm() {
       </div>
     </form>
   );
+}
+
+async function observeLessonJob(jobId: string, onStage: (stage: string) => void): Promise<LessonJob> {
+  const deadline = Date.now() + 180_000;
+  while (Date.now() < deadline) {
+    const response = await fetch(`/api/lesson-jobs/${encodeURIComponent(jobId)}`, { cache: "no-store" });
+    if (!response.ok) throw new Error("The lesson job is temporarily unavailable. Please retry.");
+    const job = await response.json() as LessonJob;
+    onStage(`${LESSON_PIPELINE_STAGES[job.stageIndex]} · ${Math.round(job.progress)}%`);
+    if (job.status === "complete" && job.lessonId) return job;
+    if (job.status === "error") throw new Error(job.error?.message ?? "Lesson generation failed. Please retry.");
+    await wait(500);
+  }
+  throw new Error("Lesson rendering timed out. Retry or use the seeded derivative example.");
 }

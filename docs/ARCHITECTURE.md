@@ -4,6 +4,28 @@
 
 Ship one reliable adaptive learning loop before broad generation features. The application has a fixed cinematic player and consumes validated episode data; model output never controls the product shell.
 
+The primary loop is now the calculus lesson runtime:
+
+```text
+POST /api/lessons → validate derivative scope → deterministic math model
+                  → optional isolated Manim render → persisted LessonSpec
+                  → /lesson/:id
+                  → two diagnostic checkpoints
+                  → POST /attempts for four exact algebra steps
+                  → misconception-specific remediation
+                  → POST /transfer → cautious recap
+```
+
+`LessonSpec` is independent from the legacy `EpisodeSpec`. `LessonStoryState` tracks presentation progress while `LessonLearnerState` stores only learning evidence. The restricted expression parser accepts numbers, `x`, `h`, parentheses, and `+ - * / ^`, normalizes degree-three polynomials with rational coefficients, and never evaluates code.
+
+The renderer boundary lives under `renderer/`. Its HTTP contract accepts one of eight template IDs plus bounded coefficients, point, locale, narration, duration, and theme. The Manim container never receives Python source or filesystem paths. A render failure leaves the responsive SVG asset active, so the offline seeded lesson remains complete.
+
+## Narration boundary
+
+`lib/media/elevenlabs-client.ts` is the only dynamic narration provider boundary for the calculus flow. It reads the server-only `ELEVEN_LABS` key, uses the reviewed English `George` voice with `eleven_multilingual_v2` by default, and writes content-addressed MP3 assets under `.data/lesson-assets/`. The public asset route exposes only allowlisted filenames and MIME types; credentials and provider responses never reach the browser. Provider absence or failure keeps captions and deterministic visuals available. The seeded lesson commits the same reviewed narration clips so playback requires no external service.
+
+Narration is the playback clock. When a committed Manim clip and generated narration differ slightly in duration, the client adjusts the silent video playback rate while preserving the learner-selected overall speed. This avoids changing speech pitch or cutting off an explanation.
+
 ## Runtime boundaries
 
 ```text

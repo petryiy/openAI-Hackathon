@@ -2,6 +2,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { EpisodeSpecSchema, type EpisodeSpec, validateEpisodeSemantics } from "@/lib/episode/schema";
 import { GenerationJobSchema, type GenerationJob } from "@/lib/jobs/schema";
+import { LessonSpecSchema, type LessonSpec } from "@/lib/lesson/schema";
+import { LessonJobSchema, type LessonJob } from "@/lib/lesson/jobs";
 
 const root = path.join(process.cwd(), ".data");
 
@@ -64,4 +66,26 @@ export async function readEpisodeDraft(id: string) {
 export async function readEpisode(id: string) {
   const value = await readJson("episodes", id);
   return value ? EpisodeSpecSchema.parse(value) : null;
+}
+
+export async function saveLesson(lesson: LessonSpec) {
+  const parsed = LessonSpecSchema.parse(lesson);
+  await writeJson("lessons", parsed.id, parsed);
+  return parsed;
+}
+
+export async function readLesson(id: string) {
+  const value = await readJson("lessons", id);
+  return value ? LessonSpecSchema.parse(value) : null;
+}
+
+export async function saveLessonJob(job: LessonJob) {
+  const parsed = LessonJobSchema.parse(job);
+  await writeJson("lesson-jobs", parsed.id, parsed);
+  return parsed;
+}
+
+export async function readLessonJob(id: string) {
+  const value = await readJson("lesson-jobs", id);
+  return value ? LessonJobSchema.parse(value) : null;
 }
