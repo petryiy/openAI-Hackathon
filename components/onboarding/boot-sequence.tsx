@@ -58,7 +58,7 @@ export function BootSequence({ ready, reducedMotion }: BootSequenceProps) {
             <span className="portal-boot__core" />
           </div>
           <div className="portal-boot__copy">
-            <strong>PLOT AS PROOF</strong>
+            <strong>AHA</strong>
             <span>{ready ? "KNOWLEDGE SPACE SYNCHRONIZED" : "CALIBRATING KNOWLEDGE SPACE"}</span>
           </div>
           <div className="portal-boot__progress" aria-hidden="true"><i /></div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Plot as Proof · Adaptive learning drama",
+  title: "Aha · Adaptive visual learning",
   description:
     "Turn an abstract STEM question into a playable story where every choice changes how the concept is visualized.",
 };

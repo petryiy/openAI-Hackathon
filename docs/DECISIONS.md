@@ -1,5 +1,9 @@
 # Decision log
 
+## 2026-07-21 — Use Aha as the final product name
+
+The submission, onboarding, generation pipeline, lesson player, README, and demo use **Aha** as the product name. “Plot as Proof” remains the pedagogical rule that story consequences and visual evidence must carry the concept. **Moonbase Last Shot** remains a legacy seeded episode title.
+
 ## 2026-07-20 — Expand derivatives through a typed symbolic capability registry
 
 Dynamic English lessons support bounded power, sum, product, quotient, standard-function, and one-layer chain rules through a strict recursive AST. TypeScript performs safe parsing, differentiation, grading, misconception matching, and SVG fallback; the isolated renderer independently verifies the expected derivative with SymPy when available. An explicit verifier disagreement blocks publication, while worker connection, timeout, HTTP, or response-schema failures preserve the TypeScript-verified SVG lesson instead of stopping generation. OpenAI may write only formula-free story hooks and transition bridges for five fixed segments. It cannot provide formulas, select unregistered capabilities, change the two checkpoints or four practice steps, judge answers, or send code to Manim. Repeated practice errors require a smaller deterministic repair check before the learner returns to the original step. Inputs outside the registry return `UNSUPPORTED_CALCULUS_SCOPE`.

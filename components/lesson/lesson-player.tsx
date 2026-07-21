@@ -211,7 +211,7 @@ export function LessonPlayer({ lesson, initialStoryState, initialLearnerState }:
 
   return (
     <main className="lesson-shell" data-phase={phase}>
-      <header className="lesson-header"><Link href="/" className="lesson-brand">PLOT AS PROOF</Link><div><span>CALCULUS LAB · DERIVATIVE</span><strong>{lesson.objective}</strong></div><p>{Math.min(100, Math.round(((storyState.currentSegmentIndex + progressOffset) / (lesson.segments.length + 3)) * 100))}%</p></header>
+      <header className="lesson-header"><Link href="/" className="lesson-brand">AHA</Link><div><span>CALCULUS LAB · DERIVATIVE</span><strong>{lesson.objective}</strong></div><p>{Math.min(100, Math.round(((storyState.currentSegmentIndex + progressOffset) / (lesson.segments.length + 3)) * 100))}%</p></header>
       <section className="lesson-workspace">
         <aside className="lesson-context"><p>MISSION CONTEXT</p><h1>{lesson.storyHook.task}</h1><span>{lesson.storyHook.setting}</span><small>{lesson.storyHook.consequence}</small><ol>{lesson.segments.map((item, index) => <li key={item.id} className={index === storyState.currentSegmentIndex && phase === "lesson" ? "active" : storyState.completedSegmentIds.includes(item.id) ? "complete" : ""}><i>{String(index + 1).padStart(2, "0")}</i>{item.kind.replace("_", " ")}</li>)}</ol></aside>
         <div className="lesson-main">

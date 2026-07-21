@@ -170,7 +170,7 @@ export function GenerationClient() {
   return (
     <section className={`director-pipeline ${ready ? "is-ready" : ""} ${failed ? "is-failed" : ""}`} aria-live="polite">
       <header className="director-pipeline__header">
-        <Link href="/" className="director-pipeline__brand">PLOT AS PROOF</Link>
+        <Link href="/" className="director-pipeline__brand">AHA</Link>
         <span>EPISODE 01 · DIRECTOR PIPELINE</span>
       </header>
 

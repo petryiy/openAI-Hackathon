@@ -174,7 +174,7 @@ export function EpisodePlayer({ episode, initialStates }: {
   return (
     <main className="episode-cinema" data-status={status}>
       <header className="cinema-hud">
-        <Link href="/" className="cinema-brand">PLOT AS PROOF</Link>
+        <Link href="/" className="cinema-brand">AHA</Link>
         <div className="cinema-episode"><span>{episode.subject} · EPISODE 01</span><strong>{episode.title}</strong></div>
         <div className="cinema-controls">
           <button type="button" aria-pressed={captionsOn} onClick={() => setCaptionsOn((value) => !value)}>CC</button>

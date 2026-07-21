@@ -1,49 +1,90 @@
-# Three-minute demo script
+# Aha — three-minute demo script
 
-## 0:00–0:20 — Ask a real derivative question
+This script matches the current calculus-first product. The spoken copy is about 320 words, leaving time for clicks and visual pauses.
 
-Load `Differentiate f(x)=(x^2+1)^3 and explain the chain rule.`
+## Before recording
 
-“This is not a generic ChatGPT answer. The product accepts a finite, reviewed derivative grammar and explicitly rejects unsupported calculus.”
+- Set `OPENAI_MODEL=gpt-5.6`, restart with `pnpm dev`, and keep the API key off-screen.
+- Keep the Manim worker healthy if you want the dynamic lesson to show MP4 evidence; the exact SVG fallback is still a valid demo path.
+- Generate the chain-rule lesson once with GPT-5.6 and record the real six-stage progress page. Edit out only the inactive waiting time—do not imply the cut is real-time.
+- Record from a fresh lesson or clear its `plot-as-proof:lesson:*` local-storage entry so the player starts at section one.
+- Keep captions on. Use 1.25× playback if narration is included.
+- Rehearse these exact inputs:
+  - Diagnostic 1: **Power rule only**
+  - Diagnostic 2: **No — that loses a required relationship**
+  - Practice step 1: `x^2+1`
+  - Practice step 2: `2x`
+  - Practice step 3, twice: `3*(x^2+1)^2`
+  - Repair check: `2x`
+  - Corrected step 3 and step 4: `6x*(x^2+1)^2`
+  - Transfer: `4x*(x^2+2)`
 
-Generate the lesson and point out the six real progress stages.
+## 0:00–0:15 — Hook
 
-## 0:20–0:45 — Separate language from mathematical truth
+**Action:** Show the Aha landing page and its Story → Visualize → Choose → Adapt portal. Click **Start a lesson**.
 
-“Code parses the expression into a restricted AST and differentiates it. An isolated SymPy endpoint independently verifies the result. OpenAI can only write the English mission hook and formula-free transitions—it cannot provide an answer, Python, LaTeX, a template, or a grade.”
+**Say:**
 
-Point to the generated mission and the rendered expression.
+“Most AI tutors answer a math question with more text. Aha turns a derivative into a visual mission, asks the learner to commit to each relationship, and changes the next explanation when the reasoning breaks.”
 
-## 0:45–1:15 — Manim explains the structure
+## 0:15–0:35 — Create and observe
 
-Show the expression-structure and chain-rule sections.
+**Action:** Load **Chain rule mission**, click **Generate visual lesson**, show the six real stages, then cut from the completed job to the published lesson.
 
-“Every supported input selects a fixed Manim recipe. The renderer receives validated AST data, generates its own LaTeX, and synchronizes five short videos to ElevenLabs narration. The generated lesson is eighty-four seconds, while each section remains pausable and replayable.”
+**Say:**
 
-Complete the first diagnostic incorrectly. Note that there is no confidence prompt, then show the inner-function scaffold.
+“I’ll generate a chain-rule lesson with GPT-5.6. This is a persisted server job: it verifies the mathematics, plans the language, generates narration, renders the visuals, and only then publishes. I’ve shortened the wait in this recording.”
 
-## 1:15–1:45 — Two diagnostics, not a quiz carousel
+## 0:35–1:00 — Separate creativity from truth
 
-Complete the worked example and answer the second diagnostic correctly.
+**Action:** Show the mission context, expression-structure visual, and the verified derivative. Briefly play a Manim segment or point to the deterministic-visual badge.
 
-“The two choices diagnose what representation should come next. A single correct answer remains evidence, not a mastery claim.”
+**Say:**
 
-## 1:45–2:25 — Deterministic step grading and remediation
+“GPT-5.6 writes the mission and five formula-free transitions through Structured Outputs. It never supplies the derivative, grade, template, or code. TypeScript parses a restricted expression tree and differentiates it; an isolated SymPy service can independently verify the result; Manim or exact SVG makes the structure visible.”
 
-Complete the first two guided fields. At step three, enter `3*(x^2+1)^2` twice.
+## 1:00–1:25 — A diagnostic changes the representation
 
-“The first miss gets a local hint. The repeated error matches the known missing-inner-derivative transform and opens a dedicated visual repair. No language model judges this.”
+**Action:** At Diagnostic 1 choose **Power rule only** and submit. Show the chain-rule repair visual, then continue. At Diagnostic 2 choose the correct **No** option.
 
-Enter `2x` in the required smaller repair check, return to the original problem, then submit `6x*(x^2+1)^2`.
+**Say:**
 
-## 2:25–2:48 — Unassisted transfer
+“The first answer reveals a rule-selection misconception, so Aha switches to a visual that reads the composition from the outside inward. There is no confidence theater and no model deciding whether I am right. The choice maps to a reviewed misconception and representation.”
 
-Submit `4x*(x^2+2)` for the new function.
+## 1:25–2:08 — Make the learner repair the mistake
 
-“The transfer task preserves the chain-rule relationship but changes the function. It has no steps, hint, or remediation and is recorded separately.”
+**Action:** Complete practice steps 1 and 2. At step 3 enter `3*(x^2+1)^2` twice. Show the missing-inner-derivative repair, enter `2x`, return, and correct steps 3 and 4.
 
-## 2:48–3:00 — Reliability proof
+**Say:**
 
-Show the cautious recap.
+“Now the learner builds the derivative. Symbolic equivalence accepts different valid forms. I’ll omit the inner derivative twice. The first miss gives a local hint; the repeated pattern opens a dedicated repair. Aha will not let me continue until I recover the smaller fact that the inner derivative is two x, then apply it to the original problem.”
 
-“The seeded instantaneous-change course still works with no keys. Dynamic narration falls back to captions, Manim falls back to deterministic SVG, unsupported questions never become low-quality generic text, and the same experience passes desktop, mobile, reduced-motion, type, test, container, and production-build checks.”
+## 2:08–2:30 — Unassisted transfer
+
+**Action:** Submit `4x*(x^2+2)` for the transfer function.
+
+**Say:**
+
+“The final task changes the function while preserving the chain-rule relationship. It has no steps, hints, or remediation, so the result is independent evidence rather than another guided success.”
+
+## 2:30–2:46 — Evidence, not mastery
+
+**Action:** Show the recap: completed steps, diagnostic count, misconception count, and transfer result.
+
+**Say:**
+
+“The recap reports the path, possible misconception, and transfer result. It says what this lesson suggests; it never claims one interaction proves mastery.”
+
+## 2:46–3:00 — Reliability and OpenAI proof
+
+**Action:** End on the generated lesson or briefly show the architecture diagram in the README.
+
+**Say:**
+
+“The seeded lesson runs with no keys. Narration falls back to captions, Manim falls back to deterministic SVG, and unsupported calculus is rejected honestly. GPT-5.6 creates constrained language; Codex helped us design, build, debug, test, and review the complete system. Aha makes the mission memorable, but verified visuals do the teaching.”
+
+## Short backup closing
+
+If the interaction runs long, skip the detailed recap and use this ending:
+
+“GPT-5.6 creates the constrained story language; deterministic code owns the mathematics, grading, adaptation, and visuals. Codex helped us build and verify the system around it. Aha uses story for attention, visual evidence for understanding, and learner action to decide what comes next.”

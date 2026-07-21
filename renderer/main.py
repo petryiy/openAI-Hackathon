@@ -121,7 +121,7 @@ class RenderRequest(BaseModel):
     theme: Literal["calculus_lab"] = "calculus_lab"
 
 
-app = FastAPI(title="Plot as Proof Manim Renderer", docs_url=None, redoc_url=None)
+app = FastAPI(title="Aha Manim Renderer", docs_url=None, redoc_url=None)
 
 
 X = sp.Symbol("x", real=True)
