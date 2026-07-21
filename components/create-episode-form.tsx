@@ -26,7 +26,7 @@ export function CreateEpisodeForm() {
   const [activeSample, setActiveSample] = useState<"moonbase" | "detective" | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const signalState = getSignalState(sourceInput);
+  const signalState = getSignalState(sourceInput, Boolean(pdfFile));
   const ready = signalState === "ready";
 
   function selectPdf(file?: File) {
@@ -62,12 +62,22 @@ export function CreateEpisodeForm() {
     if (!ready || submitting) return;
     setError("");
     setSubmitting(true);
+    const levelValue = level === "Early university" ? "early_university" : "secondary";
     try {
-      const response = await fetch("/api/lessons", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ sourceInput, locale: "en", level: level === "Early university" ? "early_university" : "secondary" }),
-      });
+      // A PDF attachment is uploaded as multipart; a plain question stays JSON.
+      const response = pdfFile
+        ? await fetch("/api/lessons", { method: "POST", body: (() => {
+            const form = new FormData();
+            form.set("sourceInput", sourceInput);
+            form.set("level", levelValue);
+            form.set("pdf", pdfFile);
+            return form;
+          })() })
+        : await fetch("/api/lessons", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ sourceInput, locale: "en", level: levelValue }),
+          });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message ?? "Could not start generation.");
       router.push(`/generate?lessonJobId=${encodeURIComponent(data.jobId)}`);
@@ -116,7 +126,7 @@ export function CreateEpisodeForm() {
               maxLength={MAX_SOURCE_LENGTH}
               onChange={(event) => { setSourceInput(event.target.value.slice(0, MAX_SOURCE_LENGTH)); setError(""); }}
               onKeyDown={handleSourceKeyDown}
-              placeholder="Enter a derivative question, for example: Why does a derivative represent instantaneous rate of change?" rows={7} />
+              placeholder="Ask any STEM question, for example: Why does Bayes' theorem flip a probability? Or attach a PDF and we'll teach it." rows={7} />
             <span className="source-console__length">SIGNAL LENGTH {String(sourceInput.length).padStart(4, "0")} / {MAX_SOURCE_LENGTH}</span>
           </div>
         </div>
@@ -132,8 +142,8 @@ export function CreateEpisodeForm() {
               onChange={(event) => { selectPdf(event.target.files?.[0]); event.currentTarget.value = ""; }} />
             <span className="pdf-uplink__icon" aria-hidden="true">PDF</span>
             <div className="pdf-uplink__copy">
-              <strong>{pdfFile ? pdfFile.name : "Attach PDF reference"}</strong>
-              <span>{pdfFile ? "REFERENCE LOCKED · LOCAL ONLY" : "ONE PDF · OPTIONAL"}</span>
+              <strong>{pdfFile ? pdfFile.name : "Attach a PDF to teach"}</strong>
+              <span>{pdfFile ? "READY TO UPLOAD" : "ONE PDF · OPTIONAL"}</span>
             </div>
             <button type="button" className="pdf-uplink__action" disabled={submitting}
               data-cursor="active" onClick={() => fileRef.current?.click()}>{pdfFile ? "Replace" : "Browse"}</button>
@@ -168,7 +178,7 @@ export function CreateEpisodeForm() {
         </header>
         <fieldset className="parameter-block parameter-subject parameter-fixed">
           <legend><span>01</span> Subject</legend>
-          <div className="subject-selector"><button type="button" aria-pressed="true" disabled>Calculus · Derivatives</button></div>
+          <div className="subject-selector"><button type="button" aria-pressed="true" disabled>Any STEM topic</button></div>
         </fieldset>
         <fieldset className="parameter-block parameter-level" disabled={submitting}>
           <legend><span>02</span> Learning level</legend>

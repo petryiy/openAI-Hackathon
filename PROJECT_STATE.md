@@ -1,6 +1,17 @@
 # Project state
 
-Last updated: 2026-07-20
+Last updated: 2026-07-21
+
+## Any-topic whiteboard lessons (new)
+
+- Any English question (or an uploaded PDF) outside the derivative grammar now produces a narrated animated lesson instead of `UNSUPPORTED_CALCULUS_SCOPE`.
+- `LessonSpecV3` joins the schema union additively (3–8 segments, inline multiple-choice checkpoints); the existing V1/V2 derivative flow, seeded demo, and grading are unchanged.
+- Track A "AI whiteboard": GPT-5 authors a constrained JSON scene DSL (`lib/lesson/whiteboard-dsl.ts`) that a fixed browser player (`components/lesson/whiteboard-stage.tsx`, SVG + GSAP + KaTeX) interprets, with the timeline slaved to the narration clock. Scenes are validated against the plot grammar and KaTeX, then sanitized (synthesize missing axes, drop dangling references, downgrade unmatched anchors) so most model drafts publish on the first attempt; only unfixable scenes trigger one bounded regeneration.
+- Correctness: deterministic numeric spot-checks of machine-expressible claims are the hard gate (force one regeneration); an advisory second-model fact-check records notes without blocking.
+- Track B "cinematic Manim": always attempted per segment in the background — GPT-5 writes a Manim CE 0.20.1 `GeneratedScene`, validated by `renderer/validate.py` (AST allowlist) and executed in the hardened sandbox via `POST /v1/renders/custom`, with traceback-fed retries (≤3), a wall-clock budget, and a liveness probe that prevents wasted codegen. Completed segments hot-swap into the player; failed ones stay on the whiteboard.
+- Narration uses the ElevenLabs `with-timestamps` endpoint; character alignment drives word-highlighted captions and animation cues, degrading gracefully to captions + a synthetic clock when the free quota is exhausted.
+- PDF upload is real: the file is uploaded to the OpenAI Files API and passed as `input_file` so GPT-5 sees text and page images.
+- Verified live end-to-end with GPT-5 on text prompts (Bayes theorem, the quadratic parabola with a correct plotted curve and labeled points) and a PDF upload (vectors/dot product); 102 tests passing including the whiteboard DSL, timeline, alignment, schema-union regression, generic-provider, track-B, and the Python validator.
 
 ## Current primary flow
 

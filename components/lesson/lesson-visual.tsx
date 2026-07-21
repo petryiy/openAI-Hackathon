@@ -1,8 +1,8 @@
 import { formatExpression } from "@/lib/math/expression";
-import type { LessonSpec, LessonSpecV1, LessonSpecV2 } from "@/lib/lesson/schema";
+import type { DerivativeLessonSpec, LessonSpecV1, LessonSpecV2 } from "@/lib/lesson/schema";
 
-type Segment = LessonSpec["segments"][number];
-type Model = LessonSpec["mathModel"];
+type Segment = DerivativeLessonSpec["segments"][number];
+type Model = DerivativeLessonSpec["mathModel"];
 type PolynomialModel = LessonSpecV1["mathModel"];
 type SymbolicModel = LessonSpecV2["mathModel"];
 

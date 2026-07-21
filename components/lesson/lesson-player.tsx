@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LessonVisual } from "@/components/lesson/lesson-visual";
-import type { LessonLearnerState, LessonSpec, LessonStoryState, ManimTemplateId } from "@/lib/lesson/schema";
+import type { DerivativeLessonSpec, LessonLearnerState, LessonStoryState, ManimTemplateId } from "@/lib/lesson/schema";
 
 type Phase = "lesson" | "checkpoint" | "practice" | "remediation" | "transfer" | "recap";
 
@@ -38,7 +38,7 @@ const REMEDIATION_COPY: Partial<Record<ManimTemplateId, { narration: string; not
   derivative_standard_function_repair: { narration: "Return to the registered derivative of the outer function, then preserve any inner derivative factor.", notice: ["Use the exact standard-function rule", "Keep signs and inner factors"] },
 };
 
-export function LessonPlayer({ lesson, initialStoryState, initialLearnerState }: { lesson: LessonSpec; initialStoryState: LessonStoryState; initialLearnerState: LessonLearnerState }) {
+export function LessonPlayer({ lesson, initialStoryState, initialLearnerState }: { lesson: DerivativeLessonSpec; initialStoryState: LessonStoryState; initialLearnerState: LessonLearnerState }) {
   const storageKey = `plot-as-proof:lesson:${lesson.id}`;
   const [storyState, setStoryState] = useState(initialStoryState);
   const [learnerState, setLearnerState] = useState(initialLearnerState);
@@ -232,7 +232,7 @@ export function LessonPlayer({ lesson, initialStoryState, initialLearnerState }:
   );
 }
 
-function LessonRecap({ lesson, learnerState, transferResult, onReplay }: { lesson: LessonSpec; learnerState: LessonLearnerState; transferResult: { correct: boolean; normalizedAnswer: string }; onReplay: () => void }) {
+function LessonRecap({ lesson, learnerState, transferResult, onReplay }: { lesson: DerivativeLessonSpec; learnerState: LessonLearnerState; transferResult: { correct: boolean; normalizedAnswer: string }; onReplay: () => void }) {
   const correctCheckpoints = learnerState.checkpointEvidence.filter((item) => item.correct).length;
   const completedPracticeCount = learnerState.completedStepIds.filter((id) => id !== "remediation-check").length;
   return <main className="lesson-recap"><p>LEARNING EVIDENCE</p><h1>{transferResult.correct ? "You transferred the relationship to a new function." : "The transfer exposed a connection that still needs practice."}</h1><p>The current evidence shows {completedPracticeCount}/4 guided steps completed, {correctCheckpoints}/2 diagnostic answers correct, and an unassisted transfer result that was {transferResult.correct ? "correct" : "not yet correct"}. This is evidence, not a final mastery claim.</p><div><article><span>TRANSFER</span><strong>{transferResult.normalizedAnswer}</strong><small>{transferResult.correct ? "Independent result correct" : "Revisit the selected derivative rule"}</small></article><article><span>POSSIBLE MISCONCEPTIONS</span><strong>{learnerState.possibleMisconceptions.length}</strong><small>{learnerState.possibleMisconceptions.join(" · ") || "No specific misconception recorded"}</small></article></div><button onClick={onReplay}>Replay with another path</button><Link href="/create">Try another derivative question</Link><small>{lesson.objective}</small></main>;

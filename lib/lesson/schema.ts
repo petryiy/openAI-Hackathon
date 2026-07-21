@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ExpressionAstSchema, RationalSpecSchema } from "@/lib/math/expression";
+import { WhiteboardSceneSchema } from "@/lib/lesson/whiteboard-dsl";
 
 export const LocaleSchema = z.literal("en");
 
@@ -43,7 +44,9 @@ export const LessonSegmentSchema = z.object({
 const AssetSchema = z.object({
   segmentId: z.string(), videoUrl: z.string().nullable(), audioUrl: z.string().nullable(),
   posterUrl: z.string().nullable(), captionsUrl: z.string().nullable(),
-  durationMs: z.number().int().positive(), checksum: z.string(), renderMode: z.enum(["manim", "svg_fallback"]),
+  // alignmentUrl stays an optional key so lessons stored before it existed still parse.
+  alignmentUrl: z.string().nullable().optional(),
+  durationMs: z.number().int().positive(), checksum: z.string(), renderMode: z.enum(["manim", "svg_fallback", "whiteboard"]),
 }).strict();
 
 const SharedLessonSchema = z.object({
@@ -110,7 +113,77 @@ export const LessonSpecV2Schema = SharedLessonSchema.extend({
   }).strict(),
 }).strict();
 
-export const LessonSpecSchema = z.union([LessonSpecV1Schema, LessonSpecV2Schema]);
+export const GenericCheckpointSchema = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  prompt: z.string().min(1).max(240),
+  options: z.array(z.object({ id: z.string().regex(/^[a-z0-9-]+$/), text: z.string().min(1).max(160) }).strict()).min(2).max(4),
+  correctIndex: z.number().int().min(0),
+  explanation: z.string().min(1).max(300),
+}).strict().refine((checkpoint) => checkpoint.correctIndex < checkpoint.options.length, { message: "correctIndex must point at one of the options." });
+
+// Narration is spoken by TTS; formulas belong in displayFormulas, not speech.
+const SpokenNarrationSchema = z.string().min(40).max(1_200)
+  .refine((text) => !/[\\{}$~^_`<>]/.test(text), { message: "Narration must be plain speakable prose without LaTeX or markup characters." });
+
+export const GenericSegmentSchema = z.object({
+  id: z.string().regex(/^[a-z0-9-]+$/),
+  kind: z.enum(["hook", "concept", "derivation", "example", "visualization", "summary"]),
+  title: z.string().min(1).max(60),
+  narration: SpokenNarrationSchema,
+  transcript: z.string().min(1),
+  displayFormulas: z.array(z.object({
+    id: z.string().regex(/^[a-z0-9-]+$/), katex: z.string().min(1).max(200), label: z.string().max(60).nullable(),
+  }).strict()).max(4),
+  scene: WhiteboardSceneSchema,
+  checkpoint: GenericCheckpointSchema.nullable(),
+  learnerShouldNotice: z.array(z.string()).min(1).max(3),
+  durationMs: z.number().int().min(4_000).max(90_000),
+}).strict();
+
+export const MathCheckSchema = z.object({
+  kind: z.enum(["derivative_of", "equivalent", "evaluates_to"]),
+  expression: z.string().min(1).max(180),
+  expected: z.string().min(1).max(180),
+  atX: z.number().nullable(),
+}).strict();
+
+export const LessonSpecV3Schema = z.object({
+  schemaVersion: z.literal(3),
+  id: z.string().regex(/^[a-zA-Z0-9-]+$/),
+  locale: LocaleSchema,
+  level: z.enum(["secondary", "early_university"]),
+  objective: z.string().min(1),
+  sourceInput: z.string().min(1),
+  topic: z.string().min(1).max(80),
+  storyHook: z.object({ setting: z.string(), task: z.string(), consequence: z.string() }).strict(),
+  segments: z.array(GenericSegmentSchema).min(3).max(8),
+  mathChecks: z.array(MathCheckSchema).max(8),
+  verification: z.object({
+    verdict: z.enum(["approved", "corrected"]),
+    notes: z.array(z.string()).max(6),
+  }).strict(),
+  upgrade: z.object({
+    trackB: z.array(z.object({
+      segmentId: z.string(), status: z.enum(["pending", "complete", "failed"]),
+    }).strict()),
+  }).strict(),
+  assets: z.object({ segments: z.array(AssetSchema) }).strict(),
+}).strict().superRefine((lesson, context) => {
+  const segmentIds = lesson.segments.map((segment) => segment.id);
+  if (new Set(segmentIds).size !== segmentIds.length) {
+    context.addIssue({ code: "custom", message: "Segment ids must be unique." });
+  }
+  const assetIds = lesson.assets.segments.map((asset) => asset.segmentId);
+  if (assetIds.length !== segmentIds.length || segmentIds.some((id) => !assetIds.includes(id))) {
+    context.addIssue({ code: "custom", message: "Assets must contain exactly one entry per segment." });
+  }
+  const trackBIds = lesson.upgrade.trackB.map((entry) => entry.segmentId);
+  if (trackBIds.length !== segmentIds.length || segmentIds.some((id) => !trackBIds.includes(id))) {
+    context.addIssue({ code: "custom", message: "upgrade.trackB must contain exactly one entry per segment." });
+  }
+});
+
+export const LessonSpecSchema = z.union([LessonSpecV1Schema, LessonSpecV2Schema, LessonSpecV3Schema]);
 
 export const MisconceptionCodeSchema = z.enum([
   "INCORRECT_F_X_PLUS_H", "MISSING_CROSS_TERM", "WRONG_SUBTRACTION", "DID_NOT_DIVIDE_BY_H",
@@ -136,6 +209,11 @@ export const LessonLearnerStateSchema = z.object({
 
 export type LessonSpecV1 = z.infer<typeof LessonSpecV1Schema>;
 export type LessonSpecV2 = z.infer<typeof LessonSpecV2Schema>;
+export type LessonSpecV3 = z.infer<typeof LessonSpecV3Schema>;
+/** The template-rendered derivative lessons; V3 whiteboard lessons have their own player and pipeline. */
+export type DerivativeLessonSpec = LessonSpecV1 | LessonSpecV2;
+export type GenericSegment = z.infer<typeof GenericSegmentSchema>;
+export type GenericCheckpoint = z.infer<typeof GenericCheckpointSchema>;
 export type LessonSpec = z.infer<typeof LessonSpecSchema>;
 export type ManimTemplateId = z.infer<typeof ManimTemplateIdSchema>;
 export type LessonStoryState = z.infer<typeof LessonStoryStateSchema>;

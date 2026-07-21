@@ -10,7 +10,9 @@ The product name is intentionally still a working title. **Moonbase Last Shot** 
 
 ## What works now
 
-- a versioned derivative-first `LessonSpec` flow as the default product path;
+- **any-topic AI whiteboard lessons**: any English question — or an uploaded PDF — becomes a narrated, animated 3Blue1Brown-style lesson. GPT-5 authors a constrained JSON scene DSL that a fixed browser player (SVG + GSAP + KaTeX) draws in sync with the narration; a background Track B upgrades each segment to a sandboxed cinematic Manim render when a renderer is available;
+- word-highlighted captions and animation cues driven by ElevenLabs `with-timestamps` alignment, degrading gracefully to captions when narration is unavailable;
+- a versioned derivative-first `LessonSpec` flow as the default path for clear derivative questions;
 - dynamic power, sum, product, quotient, `sin`/`cos`/`exp`/`ln`, and one-layer chain-rule lessons from a restricted expression AST;
 - OpenAI-authored English story hooks and transition language that cannot supply formulas, answers, code, templates, or mathematical truth;
 - a roughly 68-second, five-section seeded Manim explanation with committed ElevenLabs English narration and transcript controls;
@@ -61,10 +63,10 @@ docker run --rm --name plot-proof-renderer --read-only --tmpfs /tmp:rw,uid=1000,
   -v "$PWD/.data/lesson-assets:/output" -p 127.0.0.1:8787:8000 plot-as-proof-renderer
 ```
 
-Set `MANIM_RENDERER_URL=http://127.0.0.1:8787` for new supported lessons. The renderer accepts only allowlisted template JSON; it never executes model-authored Python.
-For a hardened deployment, put both the web worker and renderer on the same internal Docker network, do not publish the renderer port, and use its internal service address.
+Set `MANIM_RENDERER_URL=http://127.0.0.1:8787` for new supported lessons. The renderer accepts allowlisted template JSON for derivative lessons, and — for any-topic whiteboard lessons — model-authored Manim scene code at `POST /v1/renders/custom`. That endpoint runs `renderer/validate.py` first (a Python `ast` allowlist: only `manim`/`math`/`numpy` imports, no dunder access, no `open`/`eval`/`exec`/OS/network) and only then executes the scene inside the sandbox.
+For a hardened deployment, add `--network none` to the renderer container, put both the web worker and renderer on the same internal Docker network, do not publish the renderer port, and use its internal service address. Track B (the cinematic Manim upgrade) is gated by `TRACK_B_ENABLED` (defaults on when `MANIM_RENDERER_URL` is set), `TRACK_B_MAX_ATTEMPTS` (default 3), `TRACK_B_BUDGET_MS` (default 480000), and the container's `RENDER_CUSTOM_TIMEOUT` (default 150). A cheap liveness probe runs before any code generation, so a configured-but-offline renderer never spends model calls.
 
-Optional natural narration for newly generated symbolic derivative lessons:
+Optional natural narration for newly generated lessons (derivative and whiteboard). Narration uses the ElevenLabs `with-timestamps` endpoint so captions highlight the spoken word and whiteboard cues fire on the phrase being narrated; the free tier degrades gracefully to captions when quota is exhausted:
 
 ```bash
 ELEVEN_LABS=your_server_only_key

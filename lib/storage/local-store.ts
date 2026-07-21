@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { EpisodeSpecSchema, type EpisodeSpec, validateEpisodeSemantics } from "@/lib/episode/schema";
 import { GenerationJobSchema, type GenerationJob } from "@/lib/jobs/schema";
@@ -15,11 +15,12 @@ function safeId(id: string) {
 async function writeJson(folder: string, id: string, value: unknown) {
   const directory = path.join(root, folder);
   await mkdir(directory, { recursive: true });
-  await writeFile(
-    path.join(directory, `${safeId(id)}.json`),
-    JSON.stringify(value, null, 2),
-    "utf8",
-  );
+  // Write then rename so a concurrent reader (e.g. the Track B poller) never
+  // observes a half-written lesson file.
+  const target = path.join(directory, `${safeId(id)}.json`);
+  const temporary = `${target}.${process.pid}.tmp`;
+  await writeFile(temporary, JSON.stringify(value, null, 2), "utf8");
+  await rename(temporary, target);
 }
 
 async function readJson(folder: string, id: string) {

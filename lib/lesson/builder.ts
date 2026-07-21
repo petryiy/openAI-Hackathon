@@ -2,7 +2,7 @@ import { buildSymbolicDerivativeLesson } from "@/lib/lesson/capabilities";
 import { DERIVATIVE_SAMPLE } from "@/lib/lesson/constants";
 import { seededDerivativeLesson } from "@/lib/lesson/seeded-derivative";
 import { evaluateExpression, parseMathExpression } from "@/lib/math/expression";
-import type { LessonSpec } from "@/lib/lesson/schema";
+import type { DerivativeLessonSpec } from "@/lib/lesson/schema";
 
 export class UnsupportedCalculusScopeError extends Error {
   code = "UNSUPPORTED_CALCULUS_SCOPE" as const;
@@ -10,6 +10,16 @@ export class UnsupportedCalculusScopeError extends Error {
 
 const UNSUPPORTED_TOPICS = /\b(integral|integrate|limit|multivariable|partial derivative|implicit|related rates?|piecewise|arcsin|arccos|arctan)\b/i;
 const DERIVATIVE_INTENT = /\b(derivative|differentiate|instantaneous (?:rate|change)|rate of change|slope|chain rule|product rule|quotient rule|power rule)\b/i;
+
+/**
+ * The flagship derivative pipeline handles inputs that clearly ask for a
+ * one-variable derivative and stay inside the supported grammar. Everything
+ * else (any other topic, or a PDF upload) routes to the generic whiteboard
+ * pipeline instead of being rejected.
+ */
+export function isDerivativeScope(source: string): boolean {
+  return DERIVATIVE_INTENT.test(source) && !UNSUPPORTED_TOPICS.test(source);
+}
 
 function extractExpression(source: string) {
   const equation = source.match(/(?:f|g|y)\s*\(?(?:x)?\)?\s*=\s*(.+)/i);
@@ -34,7 +44,7 @@ function extractEvaluationPoint(source: string) {
   return point;
 }
 
-export function buildDerivativeLesson(sourceInput: string, locale: "en"): LessonSpec {
+export function buildDerivativeLesson(sourceInput: string, locale: "en"): DerivativeLessonSpec {
   if (locale !== "en") throw new UnsupportedCalculusScopeError("Only English lessons are supported.");
   if (sourceInput.trim() === DERIVATIVE_SAMPLE) return seededDerivativeLesson;
   if (!DERIVATIVE_INTENT.test(sourceInput) || UNSUPPORTED_TOPICS.test(sourceInput)) {

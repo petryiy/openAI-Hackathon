@@ -7,6 +7,7 @@ const FILE_TYPES: Record<string, string> = {
   "poster.png": "image/png",
   "captions.vtt": "text/vtt; charset=utf-8",
   "narration.mp3": "audio/mpeg",
+  "alignment.json": "application/json; charset=utf-8",
 };
 
 export async function GET(_request: Request, { params }: { params: Promise<{ key: string; file: string }> }) {

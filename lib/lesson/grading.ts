@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { formatPolynomial, parsePolynomial, polynomialEquals, polynomialFromFunction } from "@/lib/math/polynomial";
 import { differentiate, expressionsEquivalent, formatExpression, parseMathExpression, rational, simplify, type ExpressionAst } from "@/lib/math/expression";
-import { LessonLearnerStateSchema, MisconceptionCodeSchema, type LessonLearnerState, type LessonSpec, type LessonSpecV2, type MisconceptionCode } from "@/lib/lesson/schema";
+import { LessonLearnerStateSchema, MisconceptionCodeSchema, type DerivativeLessonSpec, type LessonLearnerState, type LessonSpecV2, type MisconceptionCode } from "@/lib/lesson/schema";
 
 const LegacyAttemptRequestSchema = z.object({
   stepId: z.enum(["substitute", "difference", "quotient", "limit"]), expression: z.string().trim().min(1).max(180), learnerState: LessonLearnerStateSchema,
@@ -53,7 +53,7 @@ function withAttempt(state: LessonLearnerState, stepId: string, correct: boolean
   };
 }
 
-function classifyLegacy(stepId: string, answer: ReturnType<typeof parsePolynomial>, lesson: Extract<LessonSpec, { schemaVersion: 1 }>): MisconceptionCode {
+function classifyLegacy(stepId: string, answer: ReturnType<typeof parsePolynomial>, lesson: Extract<DerivativeLessonSpec, { schemaVersion: 1 }>): MisconceptionCode {
   const { coefficients, evaluationPoint } = lesson.guidedPractice.function;
   if (stepId === "substitute") return coefficients[2] || coefficients[3] ? "MISSING_CROSS_TERM" : "INCORRECT_F_X_PLUS_H";
   if (stepId === "difference") return "WRONG_SUBTRACTION";
@@ -85,7 +85,7 @@ function classifySymbolic(lesson: LessonSpecV2, stepKind: LessonSpecV2["guidedPr
   return "ALGEBRA_SIMPLIFICATION_ERROR";
 }
 
-export function gradeAttempt(lesson: LessonSpec, rawInput: z.infer<typeof AttemptRequestSchema>): AttemptResult {
+export function gradeAttempt(lesson: DerivativeLessonSpec, rawInput: z.infer<typeof AttemptRequestSchema>): AttemptResult {
   const input = AttemptRequestSchema.parse(rawInput);
   if (lesson.schemaVersion === 1) {
     if (!("expression" in input)) throw new Error("This lesson expects one polynomial expression.");
@@ -119,7 +119,7 @@ export function gradeAttempt(lesson: LessonSpec, rawInput: z.infer<typeof Attemp
   return { correct, fieldResults, normalizedAnswer: parsedAnswers.map(formatExpression).join("; "), misconceptionCode: code, feedback: correct ? "Every field is mathematically equivalent to the verified step." : FEEDBACK[code!], nextAction: correct ? "continue" : state.attempts >= 2 ? "play_remediation" : "retry", learnerState: state.learnerState };
 }
 
-export function gradeTransfer(lesson: LessonSpec, expression: string) {
+export function gradeTransfer(lesson: DerivativeLessonSpec, expression: string) {
   if (lesson.schemaVersion === 1) {
     const answer = parsePolynomial(expression); const expected = polynomialFromFunction(lesson.transferTask.function.coefficients, lesson.transferTask.function.evaluationPoint, "limit");
     return { correct: polynomialEquals(answer, expected), normalizedAnswer: formatPolynomial(answer) };

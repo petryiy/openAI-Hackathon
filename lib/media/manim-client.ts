@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ExpressionAstSchema } from "@/lib/math/expression";
-import { DerivativeCapabilitySchema, ManimTemplateIdSchema, PolynomialFunctionSpecSchema, type LessonSpec } from "@/lib/lesson/schema";
+import { DerivativeCapabilitySchema, ManimTemplateIdSchema, PolynomialFunctionSpecSchema, type DerivativeLessonSpec, type LessonSpec } from "@/lib/lesson/schema";
 
 const RendererParamsSchema = z.union([
   z.object({ kind: z.literal("polynomial"), coefficients: PolynomialFunctionSpecSchema.shape.coefficients, evaluation_point: z.number().int().min(-6).max(6) }).strict(),
@@ -32,7 +32,7 @@ const MathAnalysisResponseSchema = z.object({
 }).strict();
 
 export async function verifyLessonMath(lesson: LessonSpec, rendererUrl = process.env.MANIM_RENDERER_URL) {
-  if (lesson.schemaVersion === 1 || !rendererUrl) return lesson;
+  if (lesson.schemaVersion !== 2 || !rendererUrl) return lesson;
   let analysis: z.infer<typeof MathAnalysisResponseSchema>;
   try {
     const response = await fetch(`${rendererUrl.replace(/\/$/, "")}/v1/math/analyze`, {
@@ -54,7 +54,7 @@ export async function verifyLessonMath(lesson: LessonSpec, rendererUrl = process
   return lesson;
 }
 
-export async function renderLessonSegment(lesson: LessonSpec, segment: LessonSpec["segments"][number], rendererUrl = process.env.MANIM_RENDERER_URL) {
+export async function renderLessonSegment(lesson: DerivativeLessonSpec, segment: DerivativeLessonSpec["segments"][number], rendererUrl = process.env.MANIM_RENDERER_URL) {
   if (!rendererUrl) return null;
   const params = lesson.schemaVersion === 1
     ? { kind: "polynomial" as const, coefficients: lesson.mathModel.coefficients, evaluation_point: lesson.mathModel.evaluationPoint }
@@ -74,7 +74,7 @@ export async function renderLessonSegment(lesson: LessonSpec, segment: LessonSpe
   return { segmentId: segment.id, videoUrl: job.videoUrl, audioUrl: null, posterUrl: job.posterUrl ?? null, captionsUrl: job.captionsUrl ?? null, durationMs: job.durationMs ?? segment.durationMs, checksum: job.checksum, renderMode: "manim" as const };
 }
 
-export async function renderLessonAssets(lesson: LessonSpec) {
+export async function renderLessonAssets(lesson: DerivativeLessonSpec) {
   if (!process.env.MANIM_RENDERER_URL) return lesson;
   const assets = await Promise.all(lesson.segments.map(async (segment) => {
     const fallback = lesson.assets.segments.find((asset) => asset.segmentId === segment.id)!;

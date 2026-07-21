@@ -13,6 +13,8 @@ export const LessonJobSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   lessonId: z.string().optional(),
+  mode: z.enum(["derivative", "generic"]).optional(),
+  pdfFileName: z.string().optional(),
   error: z.object({ code: z.string(), message: z.string(), recoverable: z.boolean() }).optional(),
 }).strict();
 

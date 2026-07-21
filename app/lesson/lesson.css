@@ -18,3 +18,30 @@
 @media (prefers-reduced-motion:reduce) { .lesson-visual * { animation:none!important; }.algebra-step { opacity:1; } }
 .practice-card input,.remediation-check input { width:100%; min-height:66px; margin-top:10px; padding:0 18px; border:1px solid rgba(113,239,255,.28); background:#050a13; color:#fff; font:500 1.1rem/1 ui-monospace,monospace; }
 .remediation-check { display:grid; gap:9px; padding:16px; border:1px solid rgba(113,239,255,.18); }.remediation-check label { color:#dce8f2; font-size:.8rem; }.remediation-check button { justify-self:start; padding:10px 14px; border:0; background:#70e8ff; color:#07101a; font-weight:800; }.remediation-check p { color:#ffbd81; }.remediation-card>button:disabled { opacity:.35; cursor:not-allowed; }
+
+/* AI whiteboard runtime (LessonSpec v3) */
+.whiteboard-stage { aspect-ratio:16/9; }
+.whiteboard-stage svg { position:absolute; inset:0; height:100%; }
+.whiteboard-overlay { position:absolute; inset:0; pointer-events:none; }
+.whiteboard-formula { position:absolute; white-space:nowrap; font-size:22px; max-width:82%; }
+.whiteboard-formula--sm { font-size:16px; }
+.whiteboard-formula--lg { font-size:30px; }
+.whiteboard-formula .katex { color:inherit; }
+.whiteboard-text { font-family:ui-monospace,monospace; letter-spacing:.06em; }
+.whiteboard-text--lg { letter-spacing:.14em; font-weight:650; }
+.whiteboard-caption-text { fill:#d8e7f4; font:15px ui-monospace,monospace; }
+.whiteboard-axes line { stroke:#8593aa; stroke-width:2; }
+.whiteboard-axes text { fill:#69758a; font:13px ui-monospace,monospace; }
+.whiteboard-seek { margin-top:8px; }
+.whiteboard-seek input { width:100%; height:22px; accent-color:#70e8ff; background:transparent; cursor:pointer; }
+.word-captions { margin:0; color:#dce6ef; font-size:.76rem; line-height:1.55; }
+.word-captions__word { color:#93a1b4; transition:color .12s linear; }
+.word-captions__word.is-active { color:#eaffff; text-shadow:0 0 14px rgba(112,232,255,.55); }
+.checkpoint-outcome { margin-top:22px; padding:18px; display:grid; gap:10px; border:1px solid rgba(183,224,255,.14); background:#0b1120; }
+.checkpoint-outcome[data-correct=true] { border-color:rgba(118,214,177,.4); }
+.checkpoint-outcome[data-correct=false] { border-color:rgba(255,158,143,.4); }
+.checkpoint-outcome strong { color:#eaffff; font-size:1rem; }
+.checkpoint-outcome p { margin:0; color:#b3becc; font-size:.78rem; line-height:1.6; }
+.checkpoint-outcome__actions { display:flex; gap:9px; flex-wrap:wrap; }
+.checkpoint-outcome__actions button { min-height:44px; padding:0 16px; border:1px solid rgba(183,224,255,.16); background:#0d1423; color:#d9e2ec; cursor:pointer; }
+.checkpoint-outcome__actions .checkpoint-submit { margin-top:0; border:0; background:#ffcc68; color:#080d15; font-weight:800; }

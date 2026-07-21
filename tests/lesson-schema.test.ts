@@ -5,7 +5,9 @@ import { seededDerivativeLesson } from "@/lib/lesson/seeded-derivative";
 
 describe("calculus lesson contract", () => {
   it("contains exactly two checkpoints and one unassisted transfer", () => {
-    expect(LessonSpecSchema.parse(seededDerivativeLesson).checkpoints).toHaveLength(2);
+    const parsed = LessonSpecSchema.parse(seededDerivativeLesson);
+    if (parsed.schemaVersion === 3) throw new Error("Expected a derivative lesson");
+    expect(parsed.checkpoints).toHaveLength(2);
     expect(seededDerivativeLesson.transferTask.id).toBe("transfer");
     expect(seededDerivativeLesson.locale).toBe("en");
     expect(seededDerivativeLesson.assets.segments.every((asset) => asset.renderMode === "manim" && asset.videoUrl?.endsWith(".mp4"))).toBe(true);

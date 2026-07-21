@@ -15,6 +15,8 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, ConfigDict, Field
 import sympy as sp
 
+from validate import SceneValidationError, validate_scene_code
+
 TEMPLATES = Literal[
     "derivative_story_hook", "derivative_secant_to_tangent",
     "derivative_limit_definition", "derivative_worked_example",
@@ -203,6 +205,35 @@ def write_vtt(path: Path, text: str, duration_ms: int) -> None:
     path.write_text(f"WEBVTT\n\n00:00:00.000 --> 00:00:{seconds:06.3f}\n{text}\n", encoding="utf-8")
 
 
+def finalize_video(generated: Path, output_dir: Path, key: str, narration: str, duration_ms: int, environment: dict) -> dict:
+    """Retime a rendered scene to the narration duration and emit the poster,
+    captions, and content-addressed manifest. Shared by the template and custom
+    render paths."""
+    raw_video = output_dir / "raw.mp4"
+    shutil.copyfile(generated, raw_video)
+    video = output_dir / "lesson.mp4"
+    probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(raw_video)], check=True, timeout=10, env=environment, capture_output=True, text=True)
+    source_duration = max(.1, float(probe.stdout.strip()))
+    target_duration = duration_ms / 1000
+    timing_scale = target_duration / source_duration
+    subprocess.run(["ffmpeg", "-y", "-i", str(raw_video), "-vf", f"setpts={timing_scale:.8f}*PTS", "-t", f"{target_duration:.3f}", "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(video)], check=True, timeout=45, env=environment, capture_output=True)
+    raw_video.unlink(missing_ok=True)
+    if video.stat().st_size > 80 * 1024 * 1024:
+        raise OSError("Rendered video exceeds the 80 MB asset limit")
+    poster = output_dir / "poster.png"
+    poster_timestamp = min(target_duration * .82, target_duration - .2)
+    subprocess.run(["ffmpeg", "-y", "-ss", f"{poster_timestamp:.3f}", "-i", str(video), "-frames:v", "1", str(poster)], check=True, timeout=20, env=environment, capture_output=True)
+    write_vtt(output_dir / "captions.vtt", narration, duration_ms)
+    checksum = hashlib.sha256(video.read_bytes()).hexdigest()
+    manifest = {"videoUrl": f"/lesson-assets/{key}/lesson.mp4", "posterUrl": f"/lesson-assets/{key}/poster.png", "captionsUrl": f"/lesson-assets/{key}/captions.vtt", "durationMs": duration_ms, "checksum": checksum, "renderMode": "manim"}
+    (output_dir / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    return manifest
+
+
+def base_environment(**extra: str) -> dict:
+    return {"PATH": os.environ.get("PATH", ""), "HOME": "/tmp", **extra}
+
+
 def render(job_id: str, spec: RenderRequest, key: str) -> None:
     output_dir = OUTPUT_ROOT / key
     work_dir = WORK_ROOT / job_id
@@ -216,35 +247,51 @@ def render(job_id: str, spec: RenderRequest, key: str) -> None:
             return
         spec_path = work_dir / "spec.json"
         spec_path.write_text(spec.model_dump_json(), encoding="utf-8")
-        environment = {"PATH": os.environ.get("PATH", ""), "HOME": "/tmp", "RENDER_SPEC_PATH": str(spec_path), "RENDER_OUTPUT_DIR": str(output_dir)}
+        environment = base_environment(RENDER_SPEC_PATH=str(spec_path), RENDER_OUTPUT_DIR=str(output_dir))
         command = ["manim", "-qm", "--format=mp4", "--media_dir", str(work_dir / "media"), "/renderer/scene.py", "GeneratedLessonScene"]
         with MANIM_LOCK:
             subprocess.run(command, check=True, timeout=90, env=environment, cwd="/renderer", capture_output=True, text=True)
         generated = next((work_dir / "media").rglob("GeneratedLessonScene.mp4"))
-        raw_video = output_dir / "raw.mp4"
-        shutil.copyfile(generated, raw_video)
-        video = output_dir / "lesson.mp4"
-        probe = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", str(raw_video)], check=True, timeout=10, env=environment, capture_output=True, text=True)
-        source_duration = max(.1, float(probe.stdout.strip()))
-        target_duration = spec.duration_ms / 1000
-        timing_scale = target_duration / source_duration
-        subprocess.run(["ffmpeg", "-y", "-i", str(raw_video), "-vf", f"setpts={timing_scale:.8f}*PTS", "-t", f"{target_duration:.3f}", "-an", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-movflags", "+faststart", str(video)], check=True, timeout=30, env=environment, capture_output=True)
-        raw_video.unlink(missing_ok=True)
-        if video.stat().st_size > 80 * 1024 * 1024:
-            raise OSError("Rendered video exceeds the 80 MB asset limit")
-        poster = output_dir / "poster.png"
-        poster_timestamp = min(target_duration * .82, target_duration - .2)
-        subprocess.run(["ffmpeg", "-y", "-ss", f"{poster_timestamp:.3f}", "-i", str(video), "-frames:v", "1", str(poster)], check=True, timeout=20, env=environment, capture_output=True)
-        captions = output_dir / "captions.vtt"
-        write_vtt(captions, spec.narration, spec.duration_ms)
-        checksum = hashlib.sha256(video.read_bytes()).hexdigest()
-        manifest = {"videoUrl": f"/lesson-assets/{key}/lesson.mp4", "posterUrl": f"/lesson-assets/{key}/poster.png", "captionsUrl": f"/lesson-assets/{key}/captions.vtt", "durationMs": spec.duration_ms, "checksum": checksum, "renderMode": "manim"}
-        manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+        manifest = finalize_video(generated, output_dir, key, spec.narration, spec.duration_ms, environment)
         with LOCK:
             JOBS[job_id] = {"id": job_id, "status": "complete", "cached": False, **manifest}
     except (subprocess.SubprocessError, StopIteration, OSError, ValueError) as error:
         with LOCK:
             JOBS[job_id] = {"id": job_id, "status": "error", "error": {"code": "RENDER_FAILED", "message": str(error)[:500], "recoverable": True}}
+
+
+def render_custom(job_id: str, spec: "CustomRenderRequest", key: str) -> None:
+    output_dir = OUTPUT_ROOT / key
+    work_dir = WORK_ROOT / job_id
+    try:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        work_dir.mkdir(parents=True, exist_ok=True)
+        manifest_path = output_dir / "manifest.json"
+        if manifest_path.exists():
+            with LOCK:
+                JOBS[job_id] = {"id": job_id, "status": "complete", "cached": True, **json.loads(manifest_path.read_text())}
+            return
+        # The scene code is validated at request time; it is written into the
+        # isolated tmpfs work directory and never onto the read-only image.
+        scene_path = work_dir / "scene.py"
+        scene_path.write_text(spec.scene_code, encoding="utf-8")
+        environment = base_environment()
+        timeout_seconds = int(os.environ.get("RENDER_CUSTOM_TIMEOUT", "150"))
+        command = ["manim", "-qm", "--format=mp4", "--media_dir", str(work_dir / "media"), str(scene_path), "GeneratedScene"]
+        with MANIM_LOCK:
+            subprocess.run(command, check=True, timeout=timeout_seconds, env=environment, cwd=str(work_dir), capture_output=True, text=True)
+        generated = next((work_dir / "media").rglob("GeneratedScene.mp4"))
+        manifest = finalize_video(generated, output_dir, key, spec.narration, spec.duration_ms, environment)
+        with LOCK:
+            JOBS[job_id] = {"id": job_id, "status": "complete", "cached": False, **manifest}
+    except subprocess.CalledProcessError as error:
+        # Return the tail of the traceback so the caller can feed it back to the model.
+        detail = (error.stderr or "")[-4000:] if isinstance(error.stderr, str) else str(error)[:4000]
+        with LOCK:
+            JOBS[job_id] = {"id": job_id, "status": "error", "error": {"code": "RENDER_FAILED", "message": detail or "Manim render failed.", "recoverable": True}}
+    except (subprocess.SubprocessError, StopIteration, OSError, ValueError) as error:
+        with LOCK:
+            JOBS[job_id] = {"id": job_id, "status": "error", "error": {"code": "RENDER_FAILED", "message": str(error)[:4000], "recoverable": True}}
 
 
 @app.post("/v1/renders", status_code=202)
@@ -254,6 +301,28 @@ def create_render(spec: RenderRequest):
     with LOCK:
         JOBS[job_id] = {"id": job_id, "status": "processing", "createdAt": time.time(), "cacheKey": key}
     threading.Thread(target=render, args=(job_id, spec, key), daemon=True).start()
+    return JOBS[job_id]
+
+
+class CustomRenderRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    scene_code: str = Field(min_length=1, max_length=20_000)
+    duration_ms: int = Field(ge=4_000, le=120_000)
+    narration: str = Field(min_length=1, max_length=2_000)
+    quality: Literal["m"] = "m"
+
+
+@app.post("/v1/renders/custom", status_code=202)
+def create_custom_render(spec: CustomRenderRequest):
+    try:
+        validate_scene_code(spec.scene_code)
+    except SceneValidationError as error:
+        raise HTTPException(status_code=422, detail=str(error))
+    job_id = str(uuid.uuid4())
+    key = hashlib.sha256(f"custom-scene-v1:{spec.duration_ms}:{spec.scene_code}".encode("utf-8")).hexdigest()
+    with LOCK:
+        JOBS[job_id] = {"id": job_id, "status": "processing", "createdAt": time.time(), "cacheKey": key}
+    threading.Thread(target=render_custom, args=(job_id, spec, key), daemon=True).start()
     return JOBS[job_id]
 
 

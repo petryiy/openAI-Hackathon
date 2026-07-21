@@ -11,6 +11,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const id = (await params).id;
   const lesson = id === SEEDED_DERIVATIVE_LESSON_ID ? seededDerivativeLesson : await readLesson(id);
   if (!lesson) return NextResponse.json({ error: { message: "Lesson not found." } }, { status: 404 });
+  if (lesson.schemaVersion === 3) return NextResponse.json({ error: { code: "UNSUPPORTED_LESSON", message: "Whiteboard lessons grade their checkpoints in the player." } }, { status: 400 });
   const parsed = RequestSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: { code: "INVALID_EXPRESSION", message: "Enter one polynomial result." } }, { status: 400 });
   try {

@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { LessonSpecSchema, type LessonSpec } from "@/lib/lesson/schema";
+import { LessonSpecV1Schema, type LessonSpec } from "@/lib/lesson/schema";
 import { DERIVATIVE_SAMPLE } from "@/lib/lesson/constants";
 
 export const SEEDED_DERIVATIVE_LESSON_ID = "derivative-instantaneous-change";
@@ -48,7 +48,7 @@ const manimChecksums: Record<string, string> = {
   summary: "ce3c1c37277dc6317b061ac29cf93fc24204e727ef6133960b7398a569320cf9",
 };
 
-export const seededDerivativeLesson = LessonSpecSchema.parse({
+export const seededDerivativeLesson = LessonSpecV1Schema.parse({
   schemaVersion: 1,
   id: SEEDED_DERIVATIVE_LESSON_ID,
   locale: "en",

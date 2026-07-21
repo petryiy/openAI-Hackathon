@@ -22,10 +22,11 @@ export type EpisodeSourceInput = {
   genre: EpisodeGenre;
 };
 
-export function getSignalState(sourceInput: string): SignalState {
+export function getSignalState(sourceInput: string, hasPdf = false): SignalState {
   const length = sourceInput.trim().length;
-  if (length === 0) return "awaiting";
-  return length < MIN_SOURCE_LENGTH ? "incomplete" : "ready";
+  // A PDF alone is enough to compile a lesson; text becomes optional.
+  if (length === 0) return hasPdf ? "ready" : "awaiting";
+  return length < MIN_SOURCE_LENGTH && !hasPdf ? "incomplete" : "ready";
 }
 
 export function isPdfReference(file: { name: string; type: string }) {
