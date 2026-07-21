@@ -37,9 +37,9 @@
 .onboarding-transition-veil {
   position: fixed; inset: 0; z-index: 20; pointer-events: none; opacity: 0;
   background:
-    radial-gradient(circle at 57% 49%, rgba(244,247,255,.98) 0 14%, rgba(150,245,255,.96) 34%, rgba(138,108,255,.62) 52%, rgba(8,12,22,.97) 78%),
+    radial-gradient(circle at 57% 49%, rgba(120,243,255,.14) 0 20%, rgba(138,108,255,.09) 44%, transparent 70%),
     #05070d;
-  transform: scale(.6); will-change: opacity, transform;
+  transform: scale(1); will-change: opacity, transform;
 }
 .onboarding-shell[data-phase="entering"] .onboarding-transition-veil {
   /* Covers the viewport by ~26% (0.62s), then drifts while fully opaque so the
@@ -357,8 +357,8 @@
 @keyframes boot-orbit-three { to { transform: rotate(360deg); } }
 @keyframes boot-core { to { transform: rotate(105deg) scale(1.15); filter: brightness(1.25); } }
 @keyframes boot-progress { from { transform: translateX(-110%); } to { transform: translateX(350%); } }
-@keyframes portal-enter-veil { 0% { opacity: 0; transform: scale(.6); } 12% { opacity: .28; } 26% { opacity: 1; transform: scale(2.1); } 100% { opacity: 1; transform: scale(3.2); } }
-@keyframes portal-exit-veil { from { opacity: 1; transform: scale(2.4); } to { opacity: 0; transform: scale(3); } }
+@keyframes portal-enter-veil { 0% { opacity: 0; transform: scale(1.06); } 26% { opacity: 1; transform: scale(1.015); } 100% { opacity: 1; transform: scale(1); } }
+@keyframes portal-exit-veil { from { opacity: 1; } to { opacity: 0; } }
 @keyframes forge-assemble { from { opacity: 0; transform: translateY(12px); } }
 @keyframes source-scan { 0%,100% { top: 0; opacity: 0; } 14%,82% { opacity: .5; } 72% { top: 100%; } }
 @keyframes demo-pulse { 40% { border-color: var(--forge-accent); box-shadow: 0 0 30px color-mix(in srgb,var(--forge-accent) 18%,transparent); } }
