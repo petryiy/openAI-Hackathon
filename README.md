@@ -16,8 +16,11 @@ Most AI tutors return another block of explanation. Aha makes an abstract relati
 
 ### Any-topic visual lessons
 
-- **any-topic AI whiteboard lessons**: any English question — or an uploaded PDF — becomes a narrated, animated 3Blue1Brown-style lesson. GPT-5 authors a constrained JSON scene DSL that a fixed browser player (SVG + GSAP + KaTeX) draws in sync with the narration; a background Track B upgrades each segment to a sandboxed cinematic Manim render when a renderer is available;
-- word-highlighted captions and animation cues driven by ElevenLabs `with-timestamps` alignment, degrading gracefully to captions when narration is unavailable;
+- **any-topic AI whiteboard lessons**: English questions outside the derivative grammar — or an uploaded PDF up to 20 MB — enter the `LessonSpecV3` pipeline and become a 3–8 segment narrated lesson with inline multiple-choice checkpoints;
+- GPT authors a constrained JSON scene DSL that a fixed browser player renders with SVG, GSAP, and KaTeX; local validation and sanitization repair missing axes, dangling references, and unusable narration anchors before publication;
+- deterministic checks verify machine-expressible derivative, equivalence, and evaluation claims, while a second structured model pass records advisory fact-check notes;
+- ElevenLabs `with-timestamps` alignment drives word-highlighted captions and animation cues, degrading to captions and a synthetic lesson clock when narration is unavailable;
+- after the whiteboard lesson publishes, optional Track B generates and renders a cinematic Manim version of each segment in the background, hot-swapping successful MP4s while failed segments remain fully usable whiteboards;
 
 ### Primary calculus lesson
 
@@ -74,7 +77,7 @@ docker run --rm --name plot-proof-renderer --read-only --tmpfs /tmp:rw,uid=1000,
 ```
 
 Set `MANIM_RENDERER_URL=http://127.0.0.1:8787` for new supported lessons. The renderer accepts allowlisted template JSON for derivative lessons, and — for any-topic whiteboard lessons — model-authored Manim scene code at `POST /v1/renders/custom`. That endpoint runs `renderer/validate.py` first (a Python `ast` allowlist: only `manim`/`math`/`numpy` imports, no dunder access, no `open`/`eval`/`exec`/OS/network) and only then executes the scene inside the sandbox.
-For a hardened deployment, add `--network none` to the renderer container, put both the web worker and renderer on the same internal Docker network, do not publish the renderer port, and use its internal service address. Track B (the cinematic Manim upgrade) is gated by `TRACK_B_ENABLED` (defaults on when `MANIM_RENDERER_URL` is set), `TRACK_B_MAX_ATTEMPTS` (default 3), `TRACK_B_BUDGET_MS` (default 480000), and the container's `RENDER_CUSTOM_TIMEOUT` (default 150). A cheap liveness probe runs before any code generation, so a configured-but-offline renderer never spends model calls.
+For deployment, place the web worker and renderer on a private Docker network, do not publish the renderer port, and use its internal service address. Track B is gated by `TRACK_B_ENABLED` (defaults on when `MANIM_RENDERER_URL` is set), `TRACK_B_MAX_ATTEMPTS` (default 3), `TRACK_B_BUDGET_MS` (default 480000), and the container's `RENDER_CUSTOM_TIMEOUT` (default 150 seconds). A cheap liveness probe runs before code generation, so a configured-but-offline renderer does not spend model calls.
 
 Optional natural narration for newly generated lessons (derivative and whiteboard). Narration uses the ElevenLabs `with-timestamps` endpoint so captions highlight the spoken word and whiteboard cues fire on the phrase being narrated; the free tier degrades gracefully to captions when quota is exhausted:
 
@@ -92,7 +95,7 @@ To enable new-topic generation:
 cp .env.example .env.local
 ```
 
-Then add `OPENAI_API_KEY` to `.env.local` and restart the server. Never expose it as a `NEXT_PUBLIC_` variable or commit it. The default model is `gpt-5.6`, with low reasoning and a four-minute request bound for the interactive path.
+Then add `OPENAI_API_KEY` to `.env.local` and restart the server. Never expose it as a `NEXT_PUBLIC_` variable or commit it. `OPENAI_MODEL` selects the Responses API model; the application fallback is `gpt-5.6`, while the checked-in example currently pins `gpt-5`. The interactive request uses low reasoning by default and a four-minute request bound.
 
 ## Verification
 
@@ -105,13 +108,15 @@ pnpm build
 
 Current verified baseline:
 
-- 61 tests pass;
+- 102 Vitest tests pass across derivative lessons, generic whiteboards, Track B orchestration, narration alignment, provider boundaries, and the legacy runtime;
+- the standalone Python validator passes all 9 sandbox-policy tests;
 - TypeScript passes with strict mode;
-- ESLint passes;
+- ESLint has no errors and 5 existing warnings in the onboarding fluid renderer;
 - Next.js production build succeeds;
 - browser QA passes at 1440×900 and 390×844;
 - full wrong diagnostic → rule-specific remediation → repeated practice error → required micro-check → transfer → recap path passes;
-- unsupported calculus returns a clear scope error with a usable sample, while a supported dynamic question without a key reaches a recoverable configuration pause;
+- derivative expressions outside the reviewed symbolic registry route to the generic whiteboard pipeline instead of falling back to a plain chat answer;
+- missing OpenAI credentials produce a recoverable configuration pause, while the committed derivative and whiteboard fixtures remain available without API calls;
 - the live chain-rule acceptance lesson completed through OpenAI, ElevenLabs, independent symbolic verification, and five Manim renders in 84 seconds of teaching media.
 - the same chain-rule input publishes with deterministic SVG assets when `MANIM_RENDERER_URL` is configured but the worker is offline.
 
@@ -136,22 +141,21 @@ Create form
    ▼
 LessonJob ── GET /api/lesson-jobs/:id ──► status / recoverable error
    │
-   ├─ supported derivative input ─► restricted AST + independent symbolic validation
-   └─ unsupported input ──────────► UNSUPPORTED_CALCULUS_SCOPE + usable sample
-                                      │
-                                      ▼
-                OpenAI language-only plan + ElevenLabs narration
-                                      │
-                          validated LessonSpec V2 + assets
-                                      │
-Lesson player ◄── GET /api/lessons/:id
+   ├─ reviewed derivative grammar
+   │    └─ restricted AST + deterministic derivative + optional SymPy verification
+   │       └─ constrained language plan + ElevenLabs + template Manim/SVG
+   │          └─ LessonSpec V1/V2 ─► two checkpoints ─► four exact steps
+   │             └─ remediation micro-check ─► unassisted transfer ─► recap
    │
-   ├─ exactly two diagnostic checkpoints
-   ├─ POST /attempts ─► exact AST grading ─► targeted remediation + micro-check
-   └─ POST /transfer ─► independent evidence ─► cautious recap
+   └─ other English text or PDF
+        └─ OpenAI Files input (PDF) + structured whiteboard plan
+           └─ DSL validation/sanitization + numeric checks + advisory fact-check
+              └─ ElevenLabs alignment ─► publish LessonSpec V3 whiteboard
+                 └─ inline checkpoints + recap
+                    └─ background Track B ─► validated sandboxed Manim MP4
+                                             or keep the whiteboard segment
 
-Optional renderer: allowlisted JSON ─► isolated Manim worker ─► MP4/poster/VTT
-                   renderer unavailable ─► deterministic SVG fallback
+Lesson player ◄── GET /api/lessons/:id ◄── local persisted lesson/job state
 ```
 
 Important locations:
@@ -159,8 +163,11 @@ Important locations:
 - `lib/lesson/schema.ts` — primary lesson, state, checkpoint, exercise, and asset contracts;
 - `lib/math/expression.ts`, `lib/math/polynomial.ts`, and `lib/lesson/grading.ts` — safe parsing, symbolic differentiation, and deterministic grading;
 - `lib/lesson/capabilities.ts` — allowlisted rule recipes, transfer generation, templates, and remediation;
-- `components/lesson/` — segmented lesson player and responsive deterministic visuals;
-- `renderer/` — isolated Manim/SymPy service and twenty-one allowlisted templates;
+- `lib/lesson/generic-pipeline.ts` and `lib/ai/generic-lesson-provider.ts` — V3 generation, validation, fact-checking, and publication;
+- `lib/lesson/whiteboard-dsl.ts` — constrained scene grammar, validation, and deterministic repair;
+- `lib/lesson/track-b.ts` and `lib/ai/manim-code-provider.ts` — best-effort background Manim upgrades and bounded retries;
+- `components/lesson/` — derivative player, generic whiteboard player, timeline, captions, and responsive visuals;
+- `renderer/` — isolated Manim/SymPy service, twenty-one derivative templates, custom-scene AST validator, and render cache;
 
 - `lib/episode/schema.ts` — shared Zod/TypeScript contracts;
 - `lib/episode/moonbase.ts` — release-blocking seeded episode;
@@ -175,27 +182,33 @@ Important locations:
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for boundaries and [`PRODUCT_SPEC.md`](PRODUCT_SPEC.md) for the complete product requirements.
 
-## How GPT-5.6 and Codex are used
+## How OpenAI and Codex are used
 
-### GPT-5.6 writes inside a mathematical safety rail
+### OpenAI models write inside explicit safety rails
 
-The committed instantaneous-change lesson does not require a model. For a new symbolic derivative lesson, GPT-5.6 receives already verified facts and returns one Zod-validated `DerivativeLanguagePlan`: a setting, task, consequence, and exactly five short English bridges. Local gates reject formulas, numbers, markup, code, missing segments, and duplicate segments in model-written bridge text.
+The committed instantaneous-change lesson does not require a model. For a new symbolic derivative lesson, the configured Responses API model receives already verified facts and returns one Zod-validated `DerivativeLanguagePlan`: a setting, task, consequence, and exactly five short English bridges. Local gates reject formulas, numbers, markup, code, missing segments, and duplicate segments in model-written bridge text.
 
-GPT-5.6 therefore contributes the part that benefits from language and creativity—turning a derivative into a coherent mission—without deciding the derivative, rule, grade, remediation, transfer answer, Manim template, or UI. TypeScript parses and differentiates a restricted expression AST, the capability registry selects the lesson recipe, an isolated SymPy endpoint can independently verify the result, and deterministic code inserts every formula and renderer parameter.
+The model therefore contributes the part that benefits from language and creativity—turning a derivative into a coherent mission—without deciding the derivative, rule, grade, remediation, transfer answer, Manim template, or UI. TypeScript parses and differentiates a restricted expression AST, the capability registry selects the lesson recipe, an isolated SymPy endpoint can independently verify the result, and deterministic code inserts every formula and renderer parameter.
 
-The integration uses `client.responses.parse` with `text.format` and a Zod-derived schema. That matches OpenAI's guidance to use the [Responses API](https://developers.openai.com/api/docs/guides/migrate-to-responses) for new projects and [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs) when output must follow a schema. The final submission configuration uses the [`gpt-5.6` alias](https://developers.openai.com/api/docs/models/gpt-5.6-sol).
+The integration uses `client.responses.parse` with `text.format` and a Zod-derived schema. That matches OpenAI's guidance to use the [Responses API](https://developers.openai.com/api/docs/guides/migrate-to-responses) for new projects and [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs) when output must follow a schema. `OPENAI_MODEL` is configurable; the checked-in environment example and current demo configuration use `gpt-5`, while the server-side fallback is `gpt-5.6`.
+
+For questions outside the derivative registry, the model returns a Zod-validated `LessonSpecV3` authoring payload: 3–8 teaching segments, display formulas, inline checkpoints, machine-checkable claims, and a constrained whiteboard scene/action DSL. Code adds IDs, assets, verification evidence, timing, and upgrade state. A deterministic validator and sanitizer gate the scene graph; numeric checks are blocking for claims the local grammar can evaluate, and an independent structured model review is advisory for the remaining subject matter.
+
+Track B is a separate, explicitly sandboxed code-generation path. The model may write only one bounded Manim `GeneratedScene`; `renderer/validate.py` rejects disallowed imports, calls, attributes, and filesystem or process access before the code can run. Execution happens only in the resource-limited Python container—not in Next.js—and failures are retried with a traceback or left on the already-published whiteboard representation.
 
 The retained legacy episode runtime also demonstrates a broader structured `EpisodeDraft` workflow with model-authored story content, code-planned shots, semantic gates, and bounded recorded repairs.
 
 ### Codex was the product-engineering collaborator
 
-Codex was used across the full build, not only for isolated autocomplete:
+This project was built end to end with Codex assistance. Human product direction and review remained authoritative, while every engineering phase—from architecture and implementation through debugging, testing, integration, and documentation—used Codex as the primary development collaborator rather than isolated autocomplete:
 
 - challenged the original “question in, animated video out” framing and helped turn it into an adaptive learning loop;
 - translated product conversations into `PRODUCT_SPEC.md`, contracts, architecture decisions, quality gates, and acceptance criteria;
 - implemented and iterated on the cinematic onboarding, generation pipeline, lesson player, deterministic math engine, Manim/SVG boundary, narration timing, grading, remediation, transfer, and recap;
+- designed and implemented the V3 whiteboard DSL, PDF-to-lesson path, word-level ElevenLabs synchronization, sandboxed Track B Manim upgrade, and compatibility layer that preserves the derivative and Moonbase demos;
 - investigated real failures involving provider configuration, Structured Outputs, render latency, unavailable Manim workers, symbolic equivalence, playback synchronization, and route handoff;
-- created focused tests and ran type checking, linting, production builds, container smoke tests, and desktop/mobile browser QA; and
+- resolved and integrated parallel work across branches while preserving unrelated user changes and keeping `main` deployable;
+- created focused tests and ran type checking, linting, production builds, Python sandbox tests, container smoke tests, and desktop/mobile browser QA; and
 - kept both teammates aligned through `AGENTS.md`, `PROJECT_STATE.md`, `docs/DECISIONS.md`, evals, and a shared workflow instead of restarting from the same prompt in every task.
 
 This follows the official [Codex best-practices guidance](https://learn.chatgpt.com/guides/best-practices): treat Codex as a configurable teammate, keep durable guidance in `AGENTS.md`, define what “done” means, and verify changes with tests and review.
@@ -204,19 +217,21 @@ This follows the official [Codex best-practices guidance](https://learn.chatgpt.
 
 - Model output supplies content, never arbitrary product-shell layout.
 - Exact formulas, axes, scale, geometry, and numeric relationships use deterministic renderers.
-- Generated Python never executes in the Next.js process.
+- Model-generated Manim Python never executes in the Next.js process; Track B code must pass an AST allowlist and runs only inside the isolated renderer container.
 - A single answer is evidence, not proof of mastery.
 - Wrong choices get equally polished consequences, never ridicule.
 - A missing API key produces a recoverable error rather than fabricated teaching content.
 
 ## Deliberate hackathon limitations
 
-- Optional PDF/image extraction is represented in the UI but is not wired into the first vertical slice; pasted text is the supported path.
+- PDF input is wired through the OpenAI Files API, but image OCR, multi-file ingestion, document libraries, and long-document retrieval are out of scope.
 - Dynamic derivative narration uses ElevenLabs when `ELEVEN_LABS` is configured; failures retain captions and deterministic visuals. The seeded lesson ships committed ElevenLabs audio for offline use.
-- Dynamic scope is deliberately finite: limits, integrals, multivariable, implicit differentiation, related rates, piecewise functions, inverse trig, variable exponents, and fractional powers return `UNSUPPORTED_CALCULUS_SCOPE`.
+- The deterministic derivative engine remains deliberately finite. Inputs beyond its reviewed grammar use the generic V3 whiteboard path, whose correctness gates are strongest for claims expressible by the local math checker and advisory for other subject matter.
 - The seeded lesson ships committed Manim MP4s. The isolated worker is optional for new parameterized lessons; without it, those lessons render through the deterministic SVG visual.
+- Generic lessons publish the browser-rendered whiteboard first; Track B Manim is a best-effort background enhancement and may remain mixed whiteboard/MP4 when individual renders fail or exhaust their retry budget.
 - Local filesystem storage is not suitable for multi-instance production deployment.
-- Authentication, classrooms, payments, editing, and long-document ingestion are intentionally out of scope.
+- The post-response worker is process-local rather than a durable queue, so production multi-instance execution and crash recovery require additional infrastructure.
+- Authentication, classrooms, payments, and lesson editing are intentionally out of scope.
 
 ## Team workflow
 
