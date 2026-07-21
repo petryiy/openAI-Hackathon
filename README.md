@@ -1,30 +1,30 @@
 # Aha
 
-> Aha turns derivative questions into cinematic visual lessons that diagnose mistakes and adapt the next explanation.
+> Aha turns STEM questions and course materials into adaptive visual lessons that explain ideas, check understanding, and improve the next representation.
 
-Paste a supported derivative question and Aha verifies it symbolically, asks GPT-5.6 for a constrained English mission, renders a segmented Manim or SVG explanation, pauses twice to diagnose understanding, then checks four rule-specific steps before an unassisted transfer task.
+Ask an English STEM question or attach a PDF. Aha uses GPT-5.6 Sol to plan a structured lesson, publishes an animated whiteboard within a fixed SVG/GSAP/KaTeX player, synchronizes it to narration, and then upgrades successful segments to cinematic Manim renders in the background. Checkpoints turn the result from a generated video into an active learning experience.
 
 > Story creates a reason to care. Visualization makes the relationship understandable. Interaction checks what the learner noticed. Adaptation chooses what to show next.
 
-**Aha** is the product name. “Plot as proof” remains its teaching rule: story earns attention, but visual evidence and learner action must do the explaining. The derivative lesson is the primary demo; **Moonbase Last Shot** remains a complete offline legacy episode.
+**Aha** is the product name. “Plot as proof” remains its teaching rule: story earns attention, but visual evidence and learner action must do the explaining. The any-topic STEM lesson is the primary product path. A deterministic derivative lesson remains as a reproducible judge-facing test path, and **Moonbase Last Shot** remains a complete offline legacy episode.
 
 ## Why it exists
 
-Most AI tutors return another block of explanation. Aha makes an abstract relationship visible, asks the learner to commit to a prediction or mathematical step, and changes the next representation when a recognizable misconception appears. GPT-5.6 supplies narrative energy inside a narrow contract; deterministic code owns mathematical truth, grading, adaptation, and rendering parameters.
+Most AI tutors return another block of explanation. Aha gives STEM students a visual sequence they can inspect, replay, and respond to. GPT-5.6 Sol structures the lesson and visual intent inside constrained contracts; a fixed browser renderer makes the first explanation available quickly, while a sandboxed Manim pipeline attempts a more cinematic representation without blocking the learner.
 
 ## What works now
 
-### Any-topic visual lessons
+### Primary any-topic STEM lessons
 
-- **any-topic AI whiteboard lessons**: English questions outside the derivative grammar — or an uploaded PDF up to 20 MB — enter the `LessonSpecV3` pipeline and become a 3–8 segment narrated lesson with inline multiple-choice checkpoints;
-- GPT authors a constrained JSON scene DSL that a fixed browser player renders with SVG, GSAP, and KaTeX; local validation and sanitization repair missing axes, dangling references, and unusable narration anchors before publication;
+- English STEM questions — or an uploaded PDF up to 20 MB — enter the `LessonSpecV3` pipeline and become a 3–8 segment narrated lesson with inline multiple-choice checkpoints;
+- GPT-5.6 Sol authors a constrained JSON scene DSL that a fixed browser player renders with SVG, GSAP, and KaTeX; local validation and sanitization repair missing axes, dangling references, and unusable narration anchors before publication;
 - deterministic checks verify machine-expressible derivative, equivalence, and evaluation claims, while a second structured model pass records advisory fact-check notes;
 - ElevenLabs `with-timestamps` alignment drives word-highlighted captions and animation cues, degrading to captions and a synthetic lesson clock when narration is unavailable;
 - after the whiteboard lesson publishes, optional Track B generates and renders a cinematic Manim version of each segment in the background, hot-swapping successful MP4s while failed segments remain fully usable whiteboards;
 
-### Primary calculus lesson
+### Reproducible calculus test path
 
-- a versioned derivative-first `LessonSpec` flow as the default path for clear derivative questions;
+- a versioned derivative `LessonSpec` flow gives judges a consistent question, expected mathematics, and complete interaction path for repeatable evaluation;
 - dynamic power, sum, product, quotient, `sin`/`cos`/`exp`/`ln`, and one-layer chain-rule lessons from a restricted expression AST;
 - OpenAI-authored English story hooks and transition language that cannot supply formulas, answers, code, templates, or mathematical truth;
 - a roughly 68-second, five-section seeded Manim explanation with committed ElevenLabs English narration and transcript controls;
@@ -65,7 +65,9 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), choose **Start a lesson**, and load the derivative sample. The seeded calculus lesson, committed Manim videos, grading, and English narration run without external services.
+Open [http://localhost:3000](http://localhost:3000), choose **Start a lesson**, and ask an English STEM question or attach a PDF. New lessons require OpenAI; narration and cinematic upgrades additionally use ElevenLabs and the optional renderer described below.
+
+For a completely offline player check, open [http://localhost:3000/lesson/whiteboard-exponential-fixture](http://localhost:3000/lesson/whiteboard-exponential-fixture). The seeded derivative lesson at [http://localhost:3000/lesson/derivative-instantaneous-change](http://localhost:3000/lesson/derivative-instantaneous-change) provides a reproducible end-to-end judging path with committed media and no external services.
 
 Optional Manim worker:
 
@@ -95,7 +97,7 @@ To enable new-topic generation:
 cp .env.example .env.local
 ```
 
-Then add `OPENAI_API_KEY` to `.env.local` and restart the server. Never expose it as a `NEXT_PUBLIC_` variable or commit it. `OPENAI_MODEL` selects the Responses API model; the application fallback is `gpt-5.6`, while the checked-in example currently pins `gpt-5`. The interactive request uses low reasoning by default and a four-minute request bound.
+Then add `OPENAI_API_KEY` to `.env.local` and restart the server. Never expose it as a `NEXT_PUBLIC_` variable or commit it. The checked-in configuration uses the explicit `gpt-5.6-sol` model ID for Build Week; the server-side fallback remains the `gpt-5.6` family alias. The interactive request uses low reasoning by default and a four-minute request bound.
 
 ## Verification
 
@@ -108,7 +110,7 @@ pnpm build
 
 Current verified baseline:
 
-- 102 Vitest tests pass across derivative lessons, generic whiteboards, Track B orchestration, narration alignment, provider boundaries, and the legacy runtime;
+- 123 Vitest tests pass across derivative lessons, generic whiteboards, Track B orchestration, narration alignment, provider boundaries, and the legacy runtime;
 - the standalone Python validator passes all 9 sandbox-policy tests;
 - TypeScript passes with strict mode;
 - ESLint has no errors and 5 existing warnings in the onboarding fluid renderer;
@@ -122,12 +124,14 @@ Current verified baseline:
 
 ## Primary demo flow
 
-1. Load `Differentiate f(x)=(x^2+1)^3 and explain the chain rule.`
-2. Show that OpenAI supplies the English mission language while the displayed derivative comes from deterministic AST analysis.
-3. Complete the first diagnostic incorrectly to show the structure scaffold; there is no confidence prompt.
-4. At guided step three, omit the inner derivative twice to trigger the dedicated Manim/SVG repair.
-5. Complete the required smaller repair step, return to the original problem, and correct it.
-6. Submit the unassisted derivative of `(x^2+2)^2` and show the cautious evidence recap.
+1. Ask a STEM question such as `Why does Bayes' theorem let a positive medical test still be probably wrong?` or attach a course PDF.
+2. Follow the six-stage generation page into a `LessonSpecV3` lesson with 3–8 narrated whiteboard segments.
+3. Show that the lesson is a constrained scene graph interpreted by the product—not free-form HTML or animation code from the model.
+4. Play a segment to demonstrate narration-timed drawing, formulas, plots, and word-highlighted captions.
+5. Answer an inline checkpoint and continue into the recap.
+6. With the renderer enabled, show completed segments hot-swap from the immediately available whiteboard to background-generated Manim MP4s; a failed upgrade leaves the whiteboard intact.
+
+For a short, reproducible judge test of deterministic grading and remediation, load `Differentiate f(x)=(x^2+1)^3 and explain the chain rule.`, answer the first diagnostic incorrectly, omit the inner derivative twice, complete the repair step, and finish the unassisted transfer problem.
 
 The timed voiceover is in [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md).
 
@@ -186,15 +190,13 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for boundaries and [`PRODUCT_
 
 ### OpenAI models write inside explicit safety rails
 
-The committed instantaneous-change lesson does not require a model. For a new symbolic derivative lesson, the configured Responses API model receives already verified facts and returns one Zod-validated `DerivativeLanguagePlan`: a setting, task, consequence, and exactly five short English bridges. Local gates reject formulas, numbers, markup, code, missing segments, and duplicate segments in model-written bridge text.
+For the primary STEM path, GPT-5.6 Sol returns a Zod-validated `LessonSpecV3` authoring payload: 3–8 teaching segments, display formulas, inline checkpoints, machine-checkable claims, and a constrained whiteboard scene/action DSL. Code adds IDs, assets, verification evidence, timing, and upgrade state. A deterministic validator and sanitizer gate the scene graph; numeric checks are blocking for claims the local grammar can evaluate, and an independent structured model review is advisory for the remaining subject matter.
 
-The model therefore contributes the part that benefits from language and creativity—turning a derivative into a coherent mission—without deciding the derivative, rule, grade, remediation, transfer answer, Manim template, or UI. TypeScript parses and differentiates a restricted expression AST, the capability registry selects the lesson recipe, an isolated SymPy endpoint can independently verify the result, and deterministic code inserts every formula and renderer parameter.
+Track B is a separate, explicitly sandboxed code-generation path. GPT-5.6 Sol may write only one bounded Manim `GeneratedScene`; `renderer/validate.py` rejects disallowed imports, calls, attributes, and filesystem or process access before the code can run. Execution happens only in the resource-limited Python container—not in Next.js—and failures are retried with a traceback or left on the already-published whiteboard representation.
 
-The integration uses `client.responses.parse` with `text.format` and a Zod-derived schema. That matches OpenAI's guidance to use the [Responses API](https://developers.openai.com/api/docs/guides/migrate-to-responses) for new projects and [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs) when output must follow a schema. `OPENAI_MODEL` is configurable; the checked-in environment example and current demo configuration use `gpt-5`, while the server-side fallback is `gpt-5.6`.
+The integration uses `client.responses.parse` with `text.format` and Zod-derived schemas. That matches OpenAI's guidance to use the [Responses API](https://developers.openai.com/api/docs/guides/migrate-to-responses) for new projects and [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs) when output must follow a schema. `OPENAI_MODEL` is configurable; the checked-in Build Week configuration uses the explicit `gpt-5.6-sol` model ID.
 
-For questions outside the derivative registry, the model returns a Zod-validated `LessonSpecV3` authoring payload: 3–8 teaching segments, display formulas, inline checkpoints, machine-checkable claims, and a constrained whiteboard scene/action DSL. Code adds IDs, assets, verification evidence, timing, and upgrade state. A deterministic validator and sanitizer gate the scene graph; numeric checks are blocking for claims the local grammar can evaluate, and an independent structured model review is advisory for the remaining subject matter.
-
-Track B is a separate, explicitly sandboxed code-generation path. The model may write only one bounded Manim `GeneratedScene`; `renderer/validate.py` rejects disallowed imports, calls, attributes, and filesystem or process access before the code can run. Execution happens only in the resource-limited Python container—not in Next.js—and failures are retried with a traceback or left on the already-published whiteboard representation.
+The derivative judge path uses a narrower contract: the model receives already verified facts and returns one `DerivativeLanguagePlan` containing only a story setting and short bridges. TypeScript owns the restricted expression AST, derivative, grading, lesson recipe, transfer task, and renderer parameters. This path exists to make the system's interaction and correctness boundaries easy to test; it does not define Aha's subject scope.
 
 The retained legacy episode runtime also demonstrates a broader structured `EpisodeDraft` workflow with model-authored story content, code-planned shots, semantic gates, and bounded recorded repairs.
 
