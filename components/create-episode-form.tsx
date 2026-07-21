@@ -56,7 +56,7 @@ export function CreateEpisodeForm() {
     if (kind === "moonbase") {
       setSourceInput(DERIVATIVE_SAMPLE);
     } else {
-      setSourceInput("Explain derivatives and instantaneous rate of change using f(x)=x^3-2x at x=1.");
+      setSourceInput("Differentiate f(x)=(x^2+1)^3 and explain the chain rule.");
     }
     window.setTimeout(() => setActiveSample(null), reducedMotion ? 0 : 720);
   }
@@ -164,7 +164,7 @@ export function CreateEpisodeForm() {
               <button type="button" className={activeSample === "detective" ? "is-pulsing" : ""}
                 disabled={submitting} data-cursor="active" data-cursor-color="violet" onClick={() => applySample("detective")}>
                 <span className="demo-signal__visual demo-signal__visual--evidence" aria-hidden="true"><i /><i /><i /></span>
-                <span><strong>Cubic derivative</strong><small>Calculus · Restricted polynomial</small></span><b aria-hidden="true">02</b>
+                <span><strong>Chain rule mission</strong><small>Calculus · Dynamic Manim lesson</small></span><b aria-hidden="true">02</b>
               </button>
             </div>
           </div>

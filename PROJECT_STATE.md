@@ -4,15 +4,17 @@ Last updated: 2026-07-20
 
 ## Current primary flow
 
-- Derivative-first visual lesson from pasted input, with an explicit unsupported-scope response for non-derivative topics
-- New validated `LessonSpec` plus separately persisted `LessonStoryState` and `LessonLearnerState`
+- Derivative-first visual lesson from English pasted input, with an explicit unsupported-scope response outside the reviewed rule registry
+- Versioned `LessonSpecV1/V2` plus separately persisted `LessonStoryState` and `LessonLearnerState`
 - Five roughly 68-second total seeded teaching segments with committed Manim MP4s, ElevenLabs English narration, captions/transcripts, synchronized playback speed, replay, and reduced-motion SVG fallback
 - Exactly two diagnostic pauses with direct answer submission and deterministic remediation selection
-- Four-step difference-quotient practice with a safe polynomial parser, exact rational normalization, misconception codes, and second-error remediation
-- One independently graded unassisted cubic transfer task and cautious evidence recap
-- Eight allowlisted Manim 0.20.1 templates in an isolated Docker service, content-addressed caching, strict JSON input, and responsive deterministic SVG fallback
+- Dynamic power, sum, product, quotient, `sin`/`cos`/`exp`/`ln`, and one-layer chain-rule lessons through a strict 30-node expression AST
+- Four rule-specific practice steps with exact equivalence, misconception codes, second-error remediation, and a required smaller repair check
+- One independently graded, same-rule unassisted transfer task and cautious evidence recap
+- Twenty-one allowlisted Manim 0.20.1 templates plus a SymPy verification endpoint in an isolated Docker service, content-addressed caching, strict AST input, stable posters, and responsive deterministic SVG fallback
+- OpenAI is limited to formula-free English story hooks and transition bridges; ElevenLabs George narration drives measured segment timing
 - New lesson, job, attempt, transfer, and rendered-asset APIs; the previous episode routes remain as a legacy path
-- 45 tests passing, strict TypeScript passing, webpack production build passing, and desktop plus 390×844 browser QA completed
+- 58 tests passing, strict TypeScript passing, Next.js production build passing, renderer container smoke-tested, and desktop plus 390×844 browser QA completed
 
 ## Completed baseline
 
@@ -40,7 +42,7 @@ Last updated: 2026-07-20
 
 ## Next
 
-- Run and capture the Docker Manim renderer on the final demo machine, then publish its cached MP4/poster/VTT assets
+- Add learning evals for the six derivative capabilities before extending the grammar
 - Replace the process-local post-response lesson worker with a durable external job queue before multi-instance deployment
 - Extend the typed visual grammar to limits and definite integrals only after the derivative learning eval passes
 - Remove the optional PDF control from the calculus create experience or wire extraction
@@ -52,5 +54,5 @@ Last updated: 2026-07-20
 - Local filesystem job storage is for the hackathon prototype, not multi-instance production.
 - Optional PDF/image extraction is not wired into the first vertical slice.
 - Generated lesson jobs and rendered media still use local filesystem persistence.
-- Dynamic polynomial lessons generate and cache ElevenLabs narration when a server-only key is configured; provider failure falls back to captions. The offline derivative lesson uses committed ElevenLabs audio.
+- Dynamic symbolic lessons require OpenAI for constrained English language planning, then generate and cache ElevenLabs narration when its server-only key is configured; narration failure falls back to captions. The offline derivative lesson uses committed ElevenLabs audio and no external API.
 - The seeded lesson ships committed Manim MP4s. New parameterized lessons use the exact responsive SVG representation when `MANIM_RENDERER_URL` is unavailable.

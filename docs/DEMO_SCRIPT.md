@@ -1,45 +1,49 @@
 # Three-minute demo script
 
-## 0:00–0:18 — The problem
+## 0:00–0:20 — Ask a real derivative question
 
-“Abstract explanations often fail because the learner has no reason to predict what happens next. Plot as Proof turns one question into a playable mini-drama where the concept controls the fictional world.”
+Load `Differentiate f(x)=(x^2+1)^3 and explain the chain rule.`
 
-Keep the projectile-motion sample. Select sci-fi and generate.
+“This is not a generic ChatGPT answer. The product accepts a finite, reviewed derivative grammar and explicitly rejects unsupported calculus.”
 
-## 0:18–0:38 — The plan before the media
+Generate the lesson and point out the six real progress stages.
 
-“GPT-5.6 does not generate an arbitrary video or webpage. It first creates a validated episode specification: learning objective, one-room premise, characters, two diagnostic decisions, exact visualizations, and four quality gates.”
+## 0:20–0:45 — Separate language from mathematical truth
 
-Point to the blueprint, then enter the cockpit.
+“Code parses the expression into a restricted AST and differentiates it. An isolated SymPy endpoint independently verifies the result. OpenAI can only write the English mission hook and formula-free transitions—it cannot provide an answer, Python, LaTeX, a template, or a grade.”
 
-## 0:38–1:08 — Story creates the need
+Point to the generated mission and the rendered expression.
 
-“A dust storm is closing the medicine corridor. BOLT has doubled horizontal speed and assumes everything happens twice as fast. The learner now owns the launch console.”
+## 0:45–1:15 — Manim explains the structure
 
-Advance to Decision 1. Choose **Compensate—it will land earlier** and **Very sure**.
+Show the expression-structure and chain-rule sections.
 
-## 1:08–1:40 — Adaptation changes the representation
+“Every supported input selects a fixed Manim recipe. The renderer receives validated AST data, generates its own LaTeX, and synchronizes five short videos to ElevenLabs narration. The generated lesson is eighty-four seconds, while each section remains pausable and replayable.”
 
-“Answer plus confidence matters. A confident misconception selects remediation—not a red error message. The story runs a safe experiment: a capsule launches while a spanner drops. Their amber vertical markers remain synchronized. Only the cyan horizontal motion differs.”
+Complete the first diagnostic incorrectly. Note that there is no confidence prompt, then show the inner-function scaffold.
 
-Advance to BOLT’s “delete my previous expert statement” line.
+## 1:15–1:45 — Two diagnostics, not a quiz carousel
 
-## 1:40–2:05 — Test a changed condition
+Complete the worked example and answer the second diagnostic correctly.
 
-“Branches reconverge before the second checkpoint. Now effective gravity is halved while horizontal speed stays fixed. This tests the relationship under a changed condition, not memorization.”
+“The two choices diagnose what representation should come next. A single correct answer remains evidence, not a mastery claim.”
 
-Choose **Farther** and **Very sure**. Point to `g↓ → t↑ → x↑` and BOLT’s callback: “separate departments.”
+## 1:45–2:25 — Deterministic step grading and remediation
 
-## 2:05–2:30 — Unassisted transfer
+Complete the first two guided fields. At step three, enter `3*(x^2+1)^2` twice.
 
-“The final question removes the story characters and hints. Two balls roll off the same table with different horizontal speeds.”
+“The first miss gets a local hint. The repeated error matches the known missing-inner-derivative transform and opens a dedicated visual repair. No language model judges this.”
 
-Choose the same-time, twice-distance answer and finish.
+Enter `2x` in the required smaller repair check, return to the original problem, then submit `6x*(x^2+1)^2`.
 
-## 2:30–2:50 — Evidence, not mastery theater
+## 2:25–2:48 — Unassisted transfer
 
-“The recap records the actual choices, confidence, teaching strategies, possible misconception, and independent transfer. It says what the evidence suggests; it never claims one interaction proves mastery.”
+Submit `4x*(x^2+2)` for the new function.
 
-## 2:50–3:00 — Implementation proof
+“The transfer task preserves the chain-rule relationship but changes the function. It has no steps, hint, or remediation and is recorded separately.”
 
-“GPT-5.6 is connected through server-only structured Responses API output. Exact math is SVG today and designed for an isolated Manim adapter. Codex built and reviewed the product with tests, production build checks, evals, and desktop/mobile browser QA.”
+## 2:48–3:00 — Reliability proof
+
+Show the cautious recap.
+
+“The seeded instantaneous-change course still works with no keys. Dynamic narration falls back to captions, Manim falls back to deterministic SVG, unsupported questions never become low-quality generic text, and the same experience passes desktop, mobile, reduced-motion, type, test, container, and production-build checks.”

@@ -13,11 +13,13 @@ describe("calculus lesson contract", () => {
     expect(seededDerivativeLesson.segments.reduce((sum, item) => sum + item.durationMs, 0)).toBeLessThanOrEqual(90_000);
   });
 
-  it("extracts a supported cubic while keeping code-owned lesson templates", () => {
+  it("builds a versioned symbolic lesson while keeping code-owned lesson templates", () => {
     const lesson = buildDerivativeLesson("Explain the derivative and instantaneous rate of change using f(x)=x^3-2x at x=1.", "en");
-    expect(lesson.mathModel.coefficients).toEqual([0, -2, 0, 1]);
+    expect(lesson.schemaVersion).toBe(2);
+    if (lesson.schemaVersion !== 2) throw new Error("Expected a symbolic lesson");
+    expect(lesson.capability).toBe("sum");
     expect(lesson.segments.every((segment) => segment.templateId.startsWith("derivative_"))).toBe(true);
-    expect(lesson.segments.find((segment) => segment.id === "example")?.transcript).toContain("f′(1)=1");
+    expect(lesson.segments.find((segment) => segment.id === "example")?.transcript).toContain("f'(x)");
     expect(lesson.assets.segments.every((asset) => asset.audioUrl === null)).toBe(true);
   });
 
@@ -25,8 +27,8 @@ describe("calculus lesson contract", () => {
     expect(() => buildDerivativeLesson("Explain Bayes' theorem and conditional probability.", "en")).toThrow(UnsupportedCalculusScopeError);
   });
 
-  it("rejects explicit polynomials outside the reviewed renderer grammar", () => {
-    expect(() => buildDerivativeLesson("Explain the derivative using f(x)=x^4 at x=1.", "en")).toThrow(UnsupportedCalculusScopeError);
+  it("supports bounded powers and rejects executable identifiers", () => {
+    expect(buildDerivativeLesson("Explain the derivative using f(x)=x^4 at x=1.", "en").schemaVersion).toBe(2);
     expect(() => buildDerivativeLesson("Explain the derivative using f(x)=alert(1) at x=1.", "en")).toThrow(UnsupportedCalculusScopeError);
   });
 });

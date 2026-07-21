@@ -1,5 +1,9 @@
 # Decision log
 
+## 2026-07-20 — Expand derivatives through a typed symbolic capability registry
+
+Dynamic English lessons support bounded power, sum, product, quotient, standard-function, and one-layer chain rules through a strict recursive AST. TypeScript performs safe parsing, differentiation, grading, misconception matching, and SVG fallback; the isolated renderer independently verifies the expected derivative with SymPy before rendering. OpenAI may write only formula-free story hooks and transition bridges for five fixed segments. It cannot provide formulas, select unregistered capabilities, change the two checkpoints or four practice steps, judge answers, or send code to Manim. Repeated practice errors require a smaller deterministic repair check before the learner returns to the original step. Inputs outside the registry return `UNSUPPORTED_CALCULUS_SCOPE`.
+
 ## 2026-07-20 — Use ElevenLabs for English lesson narration
 
 The primary calculus flow uses ElevenLabs `eleven_multilingual_v2` with the reviewed `George` voice for stable, natural educational narration. The API key remains server-only, generated audio is content-addressed and cached, and the five seeded clips are committed so the core lesson still works offline. Captions remain authoritative fallback content when the provider is absent or unavailable. The player treats narration as the timing clock and adjusts silent Manim playback slightly when generated speech duration differs from the committed video.

@@ -49,6 +49,7 @@ const manimChecksums: Record<string, string> = {
 };
 
 export const seededDerivativeLesson = LessonSpecSchema.parse({
+  schemaVersion: 1,
   id: SEEDED_DERIVATIVE_LESSON_ID,
   locale: "en",
   objective: "Explain and calculate instantaneous rate of change using secants approaching a tangent and the difference quotient limit.",

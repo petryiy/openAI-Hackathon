@@ -1,9 +1,15 @@
 import { z } from "zod";
-import { ManimTemplateIdSchema, PolynomialFunctionSpecSchema, type LessonSpec } from "@/lib/lesson/schema";
+import { ExpressionAstSchema } from "@/lib/math/expression";
+import { DerivativeCapabilitySchema, ManimTemplateIdSchema, PolynomialFunctionSpecSchema, type LessonSpec } from "@/lib/lesson/schema";
+
+const RendererParamsSchema = z.union([
+  z.object({ kind: z.literal("polynomial"), coefficients: PolynomialFunctionSpecSchema.shape.coefficients, evaluation_point: z.number().int().min(-6).max(6) }).strict(),
+  z.object({ kind: z.literal("symbolic"), expression_ast: ExpressionAstSchema, derivative_ast: ExpressionAstSchema, capability: DerivativeCapabilitySchema, evaluation_point: z.number().int().min(-6).max(6).optional() }).strict(),
+]);
 
 const RendererRequestSchema = z.object({
   template_id: ManimTemplateIdSchema,
-  params: z.object({ coefficients: PolynomialFunctionSpecSchema.shape.coefficients, evaluation_point: z.number().int().min(-6).max(6) }).strict(),
+  params: RendererParamsSchema,
   locale: z.literal("en"), narration: z.string().min(1).max(1200), duration_ms: z.number().int().min(4_000).max(30_000),
   theme: z.literal("calculus_lab"),
 }).strict();
@@ -17,9 +23,33 @@ const RenderJobSchema = z.object({
 
 const wait = (duration: number) => new Promise((resolve) => setTimeout(resolve, duration));
 
+const MathAnalysisResponseSchema = z.object({
+  derivative_ast: ExpressionAstSchema,
+  capability: DerivativeCapabilitySchema,
+  derivative_text: z.string(),
+  expected_matches: z.boolean(),
+  slope: z.string().optional(),
+}).strict();
+
+export async function verifyLessonMath(lesson: LessonSpec, rendererUrl = process.env.MANIM_RENDERER_URL) {
+  if (lesson.schemaVersion === 1 || !rendererUrl) return lesson;
+  const response = await fetch(`${rendererUrl.replace(/\/$/, "")}/v1/math/analyze`, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ expression_ast: lesson.mathModel.sourceExpression, expected_derivative_ast: lesson.mathModel.derivativeExpression, task: lesson.mathModel.task, evaluation_point: lesson.mathModel.evaluationPoint?.numerator }),
+    signal: AbortSignal.timeout(8_000),
+  });
+  if (!response.ok) throw new Error("The deterministic math service rejected this derivative.");
+  const analysis = MathAnalysisResponseSchema.parse(await response.json());
+  if (!analysis.expected_matches || analysis.capability !== lesson.capability) throw new Error("The independent symbolic verifier disagreed with the lesson analysis.");
+  return lesson;
+}
+
 export async function renderLessonSegment(lesson: LessonSpec, segment: LessonSpec["segments"][number], rendererUrl = process.env.MANIM_RENDERER_URL) {
   if (!rendererUrl) return null;
-  const request = RendererRequestSchema.parse({ template_id: segment.templateId, params: { coefficients: lesson.mathModel.coefficients, evaluation_point: lesson.mathModel.evaluationPoint }, locale: lesson.locale, narration: segment.narration, duration_ms: segment.durationMs, theme: "calculus_lab" });
+  const params = lesson.schemaVersion === 1
+    ? { kind: "polynomial" as const, coefficients: lesson.mathModel.coefficients, evaluation_point: lesson.mathModel.evaluationPoint }
+    : { kind: "symbolic" as const, expression_ast: lesson.mathModel.sourceExpression, derivative_ast: lesson.mathModel.derivativeExpression, capability: lesson.capability, evaluation_point: lesson.mathModel.evaluationPoint?.numerator };
+  const request = RendererRequestSchema.parse({ template_id: segment.templateId, params, locale: lesson.locale, narration: segment.narration, duration_ms: segment.durationMs, theme: "calculus_lab" });
   const createdResponse = await fetch(`${rendererUrl.replace(/\/$/, "")}/v1/renders`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(request), signal: AbortSignal.timeout(5_000) });
   if (!createdResponse.ok) throw new Error(`Renderer rejected ${segment.templateId}.`);
   let job = RenderJobSchema.parse(await createdResponse.json());

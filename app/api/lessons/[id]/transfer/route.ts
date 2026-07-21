@@ -15,6 +15,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!parsed.success) return NextResponse.json({ error: { code: "INVALID_EXPRESSION", message: "Enter one polynomial result." } }, { status: 400 });
   try {
     const result = gradeTransfer(lesson, parsed.data.expression);
-    return NextResponse.json({ ...result, learnerState: { ...parsed.data.learnerState, transferCorrect: result.correct } });
+    return NextResponse.json({ ...result, learnerState: { ...parsed.data.learnerState, transferCorrect: result.correct, transferNormalizedAnswer: result.normalizedAnswer } });
   } catch (error) { return NextResponse.json({ error: { code: "INVALID_EXPRESSION", message: (error as Error).message } }, { status: 400 }); }
 }

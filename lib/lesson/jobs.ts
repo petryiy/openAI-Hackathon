@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const LESSON_PIPELINE_STAGES = ["Analyzing question", "Verifying mathematics", "Planning explanation", "Preparing narration", "Rendering visual lesson", "Checking and publishing"] as const;
+export const LESSON_PIPELINE_STAGES = ["Understanding the question", "Verifying the mathematics", "Planning the lesson", "Generating narration", "Rendering visual explanations", "Checking and publishing"] as const;
 
 export const LessonJobSchema = z.object({
   id: z.string().regex(/^[a-zA-Z0-9-]+$/),

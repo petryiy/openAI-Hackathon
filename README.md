@@ -2,7 +2,7 @@
 
 An adaptive visual calculus lesson for OpenAI Build Week’s Education track.
 
-Paste a derivative question and the product teaches it through a segmented visual explanation, pauses twice to diagnose understanding, then asks the learner to complete a difference quotient by hand before an unassisted transfer task.
+Paste a supported derivative question and the product verifies it symbolically, plans a short English story with OpenAI, renders a segmented Manim explanation, pauses twice to diagnose understanding, then asks for four rule-specific steps before an unassisted transfer task.
 
 > Story creates a reason to care. Visualization makes the relationship understandable. Interaction checks what the learner noticed. Adaptation chooses what to show next.
 
@@ -10,12 +10,14 @@ The product name is intentionally still a working title. **Moonbase Last Shot** 
 
 ## What works now
 
-- a new derivative-first `LessonSpec` flow as the default product path;
+- a versioned derivative-first `LessonSpec` flow as the default product path;
+- dynamic power, sum, product, quotient, `sin`/`cos`/`exp`/`ln`, and one-layer chain-rule lessons from a restricted expression AST;
+- OpenAI-authored English story hooks and transition language that cannot supply formulas, answers, code, templates, or mathematical truth;
 - a roughly 68-second, five-section seeded Manim explanation with committed ElevenLabs English narration and transcript controls;
 - exactly two diagnostic pauses with direct answer submission;
-- four deterministic difference-quotient steps and one unassisted cubic transfer problem;
+- four deterministic, rule-specific expression steps, a required remediation micro-check after a repeated error, and one unassisted transfer problem;
 - a safe degree-three polynomial parser with exact rational normalization and misconception-specific remediation;
-- eight code-owned Manim templates behind an isolated Docker renderer, with content-addressed output and exact responsive SVG fallback;
+- twenty-one code-owned Manim templates behind an isolated Docker renderer, with a SymPy verification endpoint, content-addressed output, stable posters, and exact responsive SVG fallback;
 - desktop and 390×844 lesson QA covering confident error, remediation, guided recovery, transfer, and recap;
 
 - a cinematic single-screen landing page with a real-time 3D Knowledge Portal, custom desktop cursor, technology marquee, and an animated handoff into episode creation;
@@ -62,7 +64,7 @@ docker run --rm --name plot-proof-renderer --read-only --tmpfs /tmp:rw,uid=1000,
 Set `MANIM_RENDERER_URL=http://127.0.0.1:8787` for new supported lessons. The renderer accepts only allowlisted template JSON; it never executes model-authored Python.
 For a hardened deployment, put both the web worker and renderer on the same internal Docker network, do not publish the renderer port, and use its internal service address.
 
-Optional natural narration for newly generated polynomial lessons:
+Optional natural narration for newly generated symbolic derivative lessons:
 
 ```bash
 ELEVEN_LABS=your_server_only_key
@@ -91,23 +93,23 @@ pnpm build
 
 Current verified baseline:
 
-- 45 tests pass;
+- 58 tests pass;
 - TypeScript passes with strict mode;
 - ESLint passes;
 - Next.js production build succeeds;
 - browser QA passes at 1440×900 and 390×844;
-- full confident-error → remediation → changed-condition → transfer → recap path passes;
+- full wrong diagnostic → rule-specific remediation → repeated practice error → required micro-check → transfer → recap path passes;
 - unsupported topics without a key reach a clear, recoverable pause;
-- a real Chinese probability episode completes through GPT-5.6 in 85 seconds, publishes after recorded local repair, and plays through transfer and recap.
+- the live chain-rule acceptance lesson completed through OpenAI, ElevenLabs, independent symbolic verification, and five Manim renders in 84 seconds of teaching media.
 
 ## Primary demo flow
 
-1. Load “Why does the derivative represent instantaneous rate of change?” and generate the visual lesson.
-2. Play the first two narrated sections and choose the confident wrong answer at the secant checkpoint.
-3. Show the limit-definition repair, emphasizing that `h → 0` is a process rather than immediate substitution.
-4. Complete the worked example and second diagnostic checkpoint.
-5. Enter the four difference-quotient steps; repeat an error twice to trigger cancellation remediation.
-6. Recover, submit the unassisted cubic transfer answer, and show the cautious evidence recap.
+1. Load `Differentiate f(x)=(x^2+1)^3 and explain the chain rule.`
+2. Show that OpenAI supplies the English mission language while the displayed derivative comes from deterministic AST analysis.
+3. Complete the first diagnostic incorrectly to show the structure scaffold; there is no confidence prompt.
+4. At guided step three, omit the inner derivative twice to trigger the dedicated Manim/SVG repair.
+5. Complete the required smaller repair step, return to the original problem, and correct it.
+6. Submit the unassisted derivative of `(x^2+2)^2` and show the cautious evidence recap.
 
 The timed voiceover is in [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md).
 
@@ -119,16 +121,18 @@ Create form
    ▼
 LessonJob ── GET /api/lesson-jobs/:id ──► status / recoverable error
    │
-   ├─ supported derivative input ─► deterministic extraction + validation
+   ├─ supported derivative input ─► restricted AST + independent symbolic validation
    └─ unsupported input ──────────► UNSUPPORTED_CALCULUS_SCOPE + usable sample
                                       │
                                       ▼
-                          validated LessonSpec + assets
+                OpenAI language-only plan + ElevenLabs narration
+                                      │
+                          validated LessonSpec V2 + assets
                                       │
 Lesson player ◄── GET /api/lessons/:id
    │
    ├─ exactly two diagnostic checkpoints
-   ├─ POST /attempts ─► exact AST grading ─► targeted remediation
+   ├─ POST /attempts ─► exact AST grading ─► targeted remediation + micro-check
    └─ POST /transfer ─► independent evidence ─► cautious recap
 
 Optional renderer: allowlisted JSON ─► isolated Manim worker ─► MP4/poster/VTT
@@ -138,9 +142,10 @@ Optional renderer: allowlisted JSON ─► isolated Manim worker ─► MP4/post
 Important locations:
 
 - `lib/lesson/schema.ts` — primary lesson, state, checkpoint, exercise, and asset contracts;
-- `lib/math/polynomial.ts` and `lib/lesson/grading.ts` — safe parsing and deterministic grading;
+- `lib/math/expression.ts`, `lib/math/polynomial.ts`, and `lib/lesson/grading.ts` — safe parsing, symbolic differentiation, and deterministic grading;
+- `lib/lesson/capabilities.ts` — allowlisted rule recipes, transfer generation, templates, and remediation;
 - `components/lesson/` — segmented lesson player and responsive deterministic visuals;
-- `renderer/` — isolated Manim service and eight allowlisted templates;
+- `renderer/` — isolated Manim/SymPy service and twenty-one allowlisted templates;
 
 - `lib/episode/schema.ts` — shared Zod/TypeScript contracts;
 - `lib/episode/moonbase.ts` — release-blocking seeded episode;
@@ -157,7 +162,7 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for boundaries and [`PRODUCT_
 
 ## How GPT-5.6 and Codex are used
 
-The derivative vertical slice does not require a model: math extraction, validation, grading, adaptation, and visual parameters are deterministic. The retained legacy episode generator can use GPT-5.6 for structured content planning, but model output never supplies mathematical truth or executable renderer code. Official references: [GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol) and [Models](https://developers.openai.com/api/docs/models).
+The committed instantaneous-change lesson does not require a model. A new dynamic derivative lesson requires OpenAI only for a strict English language plan: code extracts and differentiates the expression, selects the lesson recipe, inserts verified fact cards, grades every answer, and supplies renderer parameters. The model never supplies mathematical truth or executable renderer code. Official references: [GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol) and [Models](https://developers.openai.com/api/docs/models).
 
 Codex was used as the primary product-engineering collaborator for specification synthesis, architecture, UI implementation, adaptation logic, test creation, production-build repair, and browser QA. The repository’s `AGENTS.md`, decision log, state file, evals, and PR template make those improvements durable across both teammates’ future Codex tasks.
 
@@ -174,6 +179,7 @@ Codex was used as the primary product-engineering collaborator for specification
 
 - Optional PDF/image extraction is represented in the UI but is not wired into the first vertical slice; pasted text is the supported path.
 - Dynamic derivative narration uses ElevenLabs when `ELEVEN_LABS` is configured; failures retain captions and deterministic visuals. The seeded lesson ships committed ElevenLabs audio for offline use.
+- Dynamic scope is deliberately finite: limits, integrals, multivariable, implicit differentiation, related rates, piecewise functions, inverse trig, variable exponents, and fractional powers return `UNSUPPORTED_CALCULUS_SCOPE`.
 - The seeded lesson ships committed Manim MP4s. The isolated worker is optional for new parameterized lessons; without it, those lessons render through the deterministic SVG visual.
 - Local filesystem storage is not suitable for multi-instance production deployment.
 - Authentication, classrooms, payments, editing, and long-document ingestion are intentionally out of scope.

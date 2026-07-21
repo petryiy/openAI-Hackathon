@@ -7,24 +7,32 @@ Ship one reliable adaptive learning loop before broad generation features. The a
 The primary loop is now the calculus lesson runtime:
 
 ```text
-POST /api/lessons → validate derivative scope → deterministic math model
-                  → optional isolated Manim render → persisted LessonSpec
+POST /api/lessons → validate derivative scope → restricted expression AST
+                  → deterministic derivative → optional independent SymPy check
+                  → constrained OpenAI language plan → ElevenLabs narration
+                  → isolated Manim render → persisted LessonSpec V2
                   → /lesson/:id
                   → two diagnostic checkpoints
-                  → POST /attempts for four exact algebra steps
-                  → misconception-specific remediation
+                  → POST /attempts for four exact rule-specific steps
+                  → misconception-specific remediation + required micro-check
                   → POST /transfer → cautious recap
 ```
 
-`LessonSpec` is independent from the legacy `EpisodeSpec`. `LessonStoryState` tracks presentation progress while `LessonLearnerState` stores only learning evidence. The restricted expression parser accepts numbers, `x`, `h`, parentheses, and `+ - * / ^`, normalizes degree-three polynomials with rational coefficients, and never evaluates code.
+`LessonSpec` is independent from the legacy `EpisodeSpec`. V1 preserves the committed difference-quotient lesson. V2 supports bounded power, sum, product, quotient, `sin`, `cos`, `exp`, `ln`, and one-layer composition through a tagged AST with at most 30 nodes and depth six. `LessonStoryState` tracks presentation progress while `LessonLearnerState` stores only learning evidence. Neither parser uses `eval`, and V2 has no confidence field.
 
-The renderer boundary lives under `renderer/`. Its HTTP contract accepts one of eight template IDs plus bounded coefficients, point, locale, narration, duration, and theme. The Manim container never receives Python source or filesystem paths. A render failure leaves the responsive SVG asset active, so the offline seeded lesson remains complete.
+The renderer boundary lives under `renderer/`. Its render contract accepts one of twenty-one template IDs plus either bounded polynomial parameters or the same strict symbolic AST, locale, narration duration, and theme. `/v1/math/analyze` constructs SymPy nodes recursively from validated AST data; it never calls `sympify` on a string. The Manim container generates LaTeX internally and never receives Python, user LaTeX, shell parameters, or filesystem paths. A render failure leaves the responsive SVG asset active, so the offline seeded lesson remains complete.
+
+## Dynamic derivative planning boundary
+
+`lib/lesson/capabilities.ts` is the capability registry and owns rule recognition, the five-segment recipe, checkpoint language, guided fields, deterministic transfer generation, template IDs, and remediation mapping. `lib/ai/lesson-provider.ts` receives verified facts and returns exactly five short English narrative bridges plus a light story hook. Local gates reject duplicate/missing segments, formulas, numbers, markup, and code in bridge text. Deterministic narration sentences insert all formulas and mathematical claims after model parsing.
 
 ## Narration boundary
 
 `lib/media/elevenlabs-client.ts` is the only dynamic narration provider boundary for the calculus flow. It reads the server-only `ELEVEN_LABS` key, uses the reviewed English `George` voice with `eleven_multilingual_v2` by default, and writes content-addressed MP3 assets under `.data/lesson-assets/`. The public asset route exposes only allowlisted filenames and MIME types; credentials and provider responses never reach the browser. Provider absence or failure keeps captions and deterministic visuals available. The seeded lesson commits the same reviewed narration clips so playback requires no external service.
 
 Narration is the playback clock. When a committed Manim clip and generated narration differ slightly in duration, the client adjusts the silent video playback rate while preserving the learner-selected overall speed. This avoids changing speech pitch or cutting off an explanation.
+
+Dynamic ElevenLabs MP3s are requested as constant-rate audio, measured from their encoded size, and written back into the segment and asset durations before rendering. The reviewed narration budget produces a verified 60–90 second total; the live chain-rule acceptance lesson measured 83.8 seconds.
 
 ## Runtime boundaries
 

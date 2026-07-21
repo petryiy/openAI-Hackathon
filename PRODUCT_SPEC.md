@@ -1,5 +1,12 @@
 # Product Build Brief: Adaptive Learning Mini-Drama
 
+> Current calculus-core override (2026-07-20): the English-only `LessonSpecV2`
+> flow uses exactly two direct diagnostic choices without a separate confidence
+> question. Confidence fields below describe only the retained legacy episode
+> contract. The current core supports a finite derivative capability registry
+> and explicitly rejects unsupported calculus rather than promising arbitrary
+> question generation.
+
 ## 0. Instructions for the coding agent
 
 You are the lead product engineer and interaction designer for this project. Build a polished, runnable hackathon MVP from this specification. Do not stop at a wireframe, static mockup, architecture document, or isolated code snippets.

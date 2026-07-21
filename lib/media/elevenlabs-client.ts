@@ -46,8 +46,8 @@ async function synthesizeNarration(text: string, config: ElevenLabsConfig) {
   const filename = path.join(directory, "narration.mp3");
 
   try {
-    await readFile(filename);
-    return `/lesson-assets/${checksum}/narration.mp3`;
+    const cached = await readFile(filename);
+    return { audioUrl: `/lesson-assets/${checksum}/narration.mp3`, durationMs: mp3DurationMs(cached) };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
   }
@@ -67,14 +67,20 @@ async function synthesizeNarration(text: string, config: ElevenLabsConfig) {
   if (audio.byteLength < 1_000) throw new Error("ElevenLabs returned an invalid narration asset.");
   await mkdir(directory, { recursive: true });
   await writeFile(filename, audio);
-  return `/lesson-assets/${checksum}/narration.mp3`;
+  return { audioUrl: `/lesson-assets/${checksum}/narration.mp3`, durationMs: mp3DurationMs(audio) };
+}
+
+function mp3DurationMs(audio: Buffer) {
+  // ElevenLabs is requested as constant 128 kbps MP3. The small ID3 header is
+  // immaterial at lesson-segment length and this avoids invoking a local player.
+  return Math.max(4_000, Math.min(30_000, Math.round((audio.byteLength * 8 / 128_000) * 1_000)));
 }
 
 export async function generateLessonNarrationAssets(lesson: LessonSpec) {
   const config = configFromEnvironment();
   if (!config) return lesson;
 
-  const assets = [];
+  const assets = []; const durations = new Map<string, number>();
   for (const segment of lesson.segments) {
     const current = lesson.assets.segments.find((asset) => asset.segmentId === segment.id)!;
     if (current.audioUrl) {
@@ -82,12 +88,17 @@ export async function generateLessonNarrationAssets(lesson: LessonSpec) {
       continue;
     }
     try {
-      const audioUrl = await synthesizeNarration(segment.narration, config);
-      assets.push({ ...current, audioUrl });
+      const narration = await synthesizeNarration(segment.narration, config);
+      durations.set(segment.id, narration.durationMs);
+      assets.push({ ...current, audioUrl: narration.audioUrl, durationMs: narration.durationMs });
     } catch {
       // Captions and deterministic visuals keep the lesson usable if the provider is unavailable.
       assets.push(current);
     }
   }
-  return { ...lesson, assets: { segments: assets } };
+  return {
+    ...lesson,
+    segments: lesson.segments.map((segment) => durations.has(segment.id) ? { ...segment, durationMs: durations.get(segment.id)! } : segment),
+    assets: { segments: assets },
+  };
 }
