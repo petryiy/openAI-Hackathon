@@ -1,4 +1,4 @@
-# Product Build Brief: Adaptive Learning Mini-Drama
+# Aha Product Build Brief: Adaptive Visual Learning
 
 > Current calculus-core override (2026-07-20): the English-only `LessonSpecV2`
 > flow uses exactly two direct diagnostic choices without a separate confidence
@@ -6,6 +6,9 @@
 > contract. The current core supports a finite derivative capability registry
 > and explicitly rejects unsupported calculus rather than promising arbitrary
 > question generation.
+
+> Final product name: **Aha**. “Plot as Proof” is the pedagogical design
+> principle, and **Moonbase Last Shot** is a legacy seeded episode title.
 
 ## 0. Instructions for the coding agent
 
@@ -23,7 +26,7 @@ The product is not a conventional AI explainer-video generator. It creates a sho
 
 One-line product pitch:
 
-> Turn any question into a playable adaptive mini-drama—every choice changes both the story and how the AI teaches you.
+> Aha turns derivative questions into cinematic visual lessons that diagnose mistakes and adapt the next explanation.
 
 Core design principle:
 
@@ -763,7 +766,7 @@ Do not reward wrong answers with more entertaining content than correct answers.
 
 ## 11. Required demo episode
 
-Ship a complete seeded episode called **Moonbase Last Shot**. The final product name should remain undecided; this is only a demo episode title.
+Ship a complete seeded legacy episode called **Moonbase Last Shot** inside **Aha**. The current primary demo is the calculus lesson runtime; Moonbase remains the offline episode title, not the product name.
 
 Source question:
 

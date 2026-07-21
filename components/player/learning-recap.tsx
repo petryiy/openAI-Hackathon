@@ -21,7 +21,7 @@ export function LearningRecap({
 }) {
   return (
     <main className="recap-shell">
-      <header className="recap-header"><div className="brand"><span className="brand-mark">P<span>↗</span></span><span><strong>Plot as Proof</strong><small>Learning recap</small></span></div><span>Episode complete · 03:02</span></header>
+      <header className="recap-header"><div className="brand"><span className="brand-mark">A<span>↗</span></span><span><strong>Aha</strong><small>Learning recap</small></span></div><span>Episode complete · 03:02</span></header>
       <section className="recap-hero">
         <div className={`transfer-result-mark ${result.correct ? "is-correct" : ""}`}>{result.correct ? "✓" : "↻"}</div>
         <p className="eyebrow">Transfer evidence</p>

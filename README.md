@@ -1,17 +1,26 @@
-# Plot as Proof (working title)
+# Aha
 
-An adaptive visual calculus lesson for OpenAI Build Week’s Education track.
+> Aha turns derivative questions into cinematic visual lessons that diagnose mistakes and adapt the next explanation.
 
-Paste a supported derivative question and the product verifies it symbolically, plans a short English story with OpenAI, renders a segmented Manim explanation, pauses twice to diagnose understanding, then asks for four rule-specific steps before an unassisted transfer task.
+Paste a supported derivative question and Aha verifies it symbolically, asks GPT-5.6 for a constrained English mission, renders a segmented Manim or SVG explanation, pauses twice to diagnose understanding, then checks four rule-specific steps before an unassisted transfer task.
 
 > Story creates a reason to care. Visualization makes the relationship understandable. Interaction checks what the learner noticed. Adaptation chooses what to show next.
 
-The product name is intentionally still a working title. **Moonbase Last Shot** is the complete seeded demo episode.
+**Aha** is the product name. “Plot as proof” remains its teaching rule: story earns attention, but visual evidence and learner action must do the explaining. The derivative lesson is the primary demo; **Moonbase Last Shot** remains a complete offline legacy episode.
+
+## Why it exists
+
+Most AI tutors return another block of explanation. Aha makes an abstract relationship visible, asks the learner to commit to a prediction or mathematical step, and changes the next representation when a recognizable misconception appears. GPT-5.6 supplies narrative energy inside a narrow contract; deterministic code owns mathematical truth, grading, adaptation, and rendering parameters.
 
 ## What works now
 
+### Any-topic visual lessons
+
 - **any-topic AI whiteboard lessons**: any English question — or an uploaded PDF — becomes a narrated, animated 3Blue1Brown-style lesson. GPT-5 authors a constrained JSON scene DSL that a fixed browser player (SVG + GSAP + KaTeX) draws in sync with the narration; a background Track B upgrades each segment to a sandboxed cinematic Manim render when a renderer is available;
 - word-highlighted captions and animation cues driven by ElevenLabs `with-timestamps` alignment, degrading gracefully to captions when narration is unavailable;
+
+### Primary calculus lesson
+
 - a versioned derivative-first `LessonSpec` flow as the default path for clear derivative questions;
 - dynamic power, sum, product, quotient, `sin`/`cos`/`exp`/`ln`, and one-layer chain-rule lessons from a restricted expression AST;
 - OpenAI-authored English story hooks and transition language that cannot supply formulas, answers, code, templates, or mathematical truth;
@@ -20,11 +29,12 @@ The product name is intentionally still a working title. **Moonbase Last Shot** 
 - four deterministic, rule-specific expression steps, a required remediation micro-check after a repeated error, and one unassisted transfer problem;
 - a safe degree-three polynomial parser with exact rational normalization and misconception-specific remediation;
 - twenty-one code-owned Manim templates behind an isolated Docker renderer, with a SymPy verification endpoint, content-addressed output, stable posters, and exact responsive SVG fallback;
-- desktop and 390×844 lesson QA covering confident error, remediation, guided recovery, transfer, and recap;
+- a cinematic single-screen landing page with a real-time 3D Knowledge Portal, custom desktop cursor, technology marquee, and animated handoff into lesson creation;
+- polished responsive create, six-stage generation, lesson player, remediation, transfer, and recap experiences;
+- desktop and 390×844 lesson QA covering an incorrect diagnostic, remediation, guided recovery, transfer, and recap.
 
-- a cinematic single-screen landing page with a real-time 3D Knowledge Portal, custom desktop cursor, technology marquee, and an animated handoff into episode creation;
-- polished responsive create, generation, player, and recap experiences;
-- six observable generation stages with a saved local job record;
+### Retained legacy episode runtime
+
 - a complete offline Moonbase episode in one lunar-rover cockpit;
 - the legacy Moonbase episode retains two story decisions with confidence capture;
 - separate `StoryState` and `LearnerState` objects;
@@ -52,7 +62,7 @@ pnpm install
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000), choose **Start an episode**, and load the derivative sample. The seeded calculus lesson, committed Manim videos, grading, and English narration run without external services.
+Open [http://localhost:3000](http://localhost:3000), choose **Start a lesson**, and load the derivative sample. The seeded calculus lesson, committed Manim videos, grading, and English narration run without external services.
 
 Optional Manim worker:
 
@@ -101,7 +111,7 @@ Current verified baseline:
 - Next.js production build succeeds;
 - browser QA passes at 1440×900 and 390×844;
 - full wrong diagnostic → rule-specific remediation → repeated practice error → required micro-check → transfer → recap path passes;
-- unsupported topics without a key reach a clear, recoverable pause;
+- unsupported calculus returns a clear scope error with a usable sample, while a supported dynamic question without a key reaches a recoverable configuration pause;
 - the live chain-rule acceptance lesson completed through OpenAI, ElevenLabs, independent symbolic verification, and five Manim renders in 84 seconds of teaching media.
 - the same chain-rule input publishes with deterministic SVG assets when `MANIM_RENDERER_URL` is configured but the worker is offline.
 
@@ -115,6 +125,8 @@ Current verified baseline:
 6. Submit the unassisted derivative of `(x^2+2)^2` and show the cautious evidence recap.
 
 The timed voiceover is in [`docs/DEMO_SCRIPT.md`](docs/DEMO_SCRIPT.md).
+
+Copy-ready Devpost text is in [`docs/DEVPOST_SUBMISSION.md`](docs/DEVPOST_SUBMISSION.md).
 
 ## Architecture
 
@@ -165,9 +177,28 @@ See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for boundaries and [`PRODUCT_
 
 ## How GPT-5.6 and Codex are used
 
-The committed instantaneous-change lesson does not require a model. A new dynamic derivative lesson requires OpenAI only for a strict English language plan: code extracts and differentiates the expression, selects the lesson recipe, inserts verified fact cards, grades every answer, and supplies renderer parameters. The model never supplies mathematical truth or executable renderer code. Official references: [GPT-5.6 Sol](https://developers.openai.com/api/docs/models/gpt-5.6-sol) and [Models](https://developers.openai.com/api/docs/models).
+### GPT-5.6 writes inside a mathematical safety rail
 
-Codex was used as the primary product-engineering collaborator for specification synthesis, architecture, UI implementation, adaptation logic, test creation, production-build repair, and browser QA. The repository’s `AGENTS.md`, decision log, state file, evals, and PR template make those improvements durable across both teammates’ future Codex tasks.
+The committed instantaneous-change lesson does not require a model. For a new symbolic derivative lesson, GPT-5.6 receives already verified facts and returns one Zod-validated `DerivativeLanguagePlan`: a setting, task, consequence, and exactly five short English bridges. Local gates reject formulas, numbers, markup, code, missing segments, and duplicate segments in model-written bridge text.
+
+GPT-5.6 therefore contributes the part that benefits from language and creativity—turning a derivative into a coherent mission—without deciding the derivative, rule, grade, remediation, transfer answer, Manim template, or UI. TypeScript parses and differentiates a restricted expression AST, the capability registry selects the lesson recipe, an isolated SymPy endpoint can independently verify the result, and deterministic code inserts every formula and renderer parameter.
+
+The integration uses `client.responses.parse` with `text.format` and a Zod-derived schema. That matches OpenAI's guidance to use the [Responses API](https://developers.openai.com/api/docs/guides/migrate-to-responses) for new projects and [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs) when output must follow a schema. The final submission configuration uses the [`gpt-5.6` alias](https://developers.openai.com/api/docs/models/gpt-5.6-sol).
+
+The retained legacy episode runtime also demonstrates a broader structured `EpisodeDraft` workflow with model-authored story content, code-planned shots, semantic gates, and bounded recorded repairs.
+
+### Codex was the product-engineering collaborator
+
+Codex was used across the full build, not only for isolated autocomplete:
+
+- challenged the original “question in, animated video out” framing and helped turn it into an adaptive learning loop;
+- translated product conversations into `PRODUCT_SPEC.md`, contracts, architecture decisions, quality gates, and acceptance criteria;
+- implemented and iterated on the cinematic onboarding, generation pipeline, lesson player, deterministic math engine, Manim/SVG boundary, narration timing, grading, remediation, transfer, and recap;
+- investigated real failures involving provider configuration, Structured Outputs, render latency, unavailable Manim workers, symbolic equivalence, playback synchronization, and route handoff;
+- created focused tests and ran type checking, linting, production builds, container smoke tests, and desktop/mobile browser QA; and
+- kept both teammates aligned through `AGENTS.md`, `PROJECT_STATE.md`, `docs/DECISIONS.md`, evals, and a shared workflow instead of restarting from the same prompt in every task.
+
+This follows the official [Codex best-practices guidance](https://learn.chatgpt.com/guides/best-practices): treat Codex as a configurable teammate, keep durable guidance in `AGENTS.md`, define what “done” means, and verify changes with tests and review.
 
 ## Safety and pedagogy boundaries
 

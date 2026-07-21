@@ -27,6 +27,7 @@ Last updated: 2026-07-21
 - New lesson, job, attempt, transfer, and rendered-asset APIs; the previous episode routes remain as a legacy path
 - Dedicated visual lesson loading page observes all six server-owned stages, survives refresh through the job URL, and hands off automatically to the published lesson
 - 61 tests passing, strict TypeScript passing, Next.js production build passing, renderer container smoke-tested, renderer-offline SVG publication smoke-tested, and desktop plus 390×844 browser QA completed
+- Final **Aha** product name plus copy-ready Devpost, GPT-5.6/Codex disclosure, and current calculus demo narration
 
 ## Completed baseline
 

@@ -39,9 +39,9 @@ export function LandingPage() {
       transition={{ duration: 0.55 }}
     >
       <header className="landing-header">
-        <div className="onboarding-brand" aria-label="Plot as Proof">
+        <div className="onboarding-brand" aria-label="Aha">
           <span className="onboarding-brand__mark" aria-hidden="true"><i /></span>
-          <span>Plot as Proof</span>
+          <span>Aha</span>
         </div>
         <div className="landing-header__meta">
           <span className="landing-header__signal" aria-hidden="true" />
@@ -63,7 +63,7 @@ export function LandingPage() {
             <strong>Step inside it.</strong>
           </h1>
           <p className="landing-description">
-            Turn any difficult question into a playable story that adapts to how you think.
+            Turn a difficult derivative into a visual mission that adapts when your reasoning changes.
           </p>
 
           <div className="landing-action-row">
@@ -72,7 +72,7 @@ export function LandingPage() {
               disabled={entering} onClick={startJourney} onPointerMove={moveButton}
               onPointerLeave={resetButton}
             >
-              <span className="landing-cta__label">{entering ? "Opening the story" : "Start an episode"}</span>
+              <span className="landing-cta__label">{entering ? "Opening the lab" : "Start a lesson"}</span>
               <span className="landing-cta__icon" aria-hidden="true"><i /><b>↗</b></span>
             </button>
           </div>
