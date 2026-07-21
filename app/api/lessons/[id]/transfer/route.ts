@@ -2,14 +2,14 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { gradeTransfer } from "@/lib/lesson/grading";
 import { LessonLearnerStateSchema } from "@/lib/lesson/schema";
-import { SEEDED_DERIVATIVE_LESSON_ID, seededDerivativeLesson } from "@/lib/lesson/seeded-derivative";
+import { getSeededLesson } from "@/lib/lesson/seeded-lessons";
 import { readLesson } from "@/lib/storage/local-store";
 
 const RequestSchema = z.object({ expression: z.string().trim().min(1).max(120), learnerState: LessonLearnerStateSchema }).strict();
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const id = (await params).id;
-  const lesson = id === SEEDED_DERIVATIVE_LESSON_ID ? seededDerivativeLesson : await readLesson(id);
+  const lesson = getSeededLesson(id) ?? await readLesson(id);
   if (!lesson) return NextResponse.json({ error: { message: "Lesson not found." } }, { status: 404 });
   if (lesson.schemaVersion === 3) return NextResponse.json({ error: { code: "UNSUPPORTED_LESSON", message: "Whiteboard lessons grade their checkpoints in the player." } }, { status: 400 });
   const parsed = RequestSchema.safeParse(await request.json().catch(() => null));

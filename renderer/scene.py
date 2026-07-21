@@ -62,6 +62,12 @@ class GeneratedLessonScene(Scene):
             raise ValueError("Symbolic template requires validated symbolic params")
         return params["expression_ast"], params["derivative_ast"], params["capability"]
 
+    def is_seed_chain(self, source):
+        return (
+            source.get("type") == "power" and source.get("exponent") == 3
+            and source.get("base", {}).get("type") == "add"
+        )
+
     @classmethod
     def ast_tex(cls, node):
         kind = node["type"]
@@ -170,6 +176,8 @@ class GeneratedLessonScene(Scene):
 
     def rule_story_hook(self):
         source, _, capability = self.symbolic_model()
+        if capability == "chain" and self.is_seed_chain(source):
+            return self.chain_story_hook()
         title = Text("STRUCTURE CONTROLS CHANGE", color=CYAN, font_size=38)
         formula = MathTex(rf"f(x)={self.ast_tex(source)}", color=WHITE).scale(1.25).next_to(title, DOWN, buff=.75)
         rule = Text(capability.replace("_", " ").upper(), color=AMBER, font_size=26).next_to(formula, DOWN, buff=.65)
@@ -177,6 +185,8 @@ class GeneratedLessonScene(Scene):
 
     def expression_structure(self):
         source, _, capability = self.symbolic_model()
+        if capability == "chain" and self.is_seed_chain(source):
+            return self.chain_expression_structure()
         formula = MathTex(self.ast_tex(source), color=WHITE).scale(1.55)
         box = SurroundingRectangle(formula, color=CYAN, buff=.35, corner_radius=.18)
         label = Text(f"outer structure → {capability.replace('_', ' ')}", color=AMBER, font_size=28).next_to(box, DOWN, buff=.8)
@@ -184,6 +194,8 @@ class GeneratedLessonScene(Scene):
 
     def symbolic_rule(self):
         source, derivative, capability = self.symbolic_model()
+        if capability == "chain" and self.is_seed_chain(source):
+            return self.chain_rule()
         heading = Text(capability.replace("_", " ").upper(), color=CYAN, font_size=34).to_edge(UP)
         before = MathTex(rf"f(x)={self.ast_tex(source)}").scale(1.25)
         arrow = Arrow(LEFT, RIGHT, color=VIOLET).next_to(before, DOWN, buff=.65)
@@ -192,6 +204,8 @@ class GeneratedLessonScene(Scene):
 
     def symbolic_worked_example(self):
         source, derivative, capability = self.symbolic_model()
+        if capability == "chain" and self.is_seed_chain(source):
+            return self.chain_worked_example()
         lines = VGroup(
             MathTex(rf"f(x)={self.ast_tex(source)}"),
             Text(f"identify: {capability.replace('_', ' ')}", color=CYAN, font_size=28),
@@ -202,7 +216,9 @@ class GeneratedLessonScene(Scene):
         self.wait(2)
 
     def symbolic_summary(self):
-        _, derivative, _ = self.symbolic_model()
+        source, derivative, capability = self.symbolic_model()
+        if capability == "chain" and self.is_seed_chain(source):
+            return self.chain_summary()
         steps = VGroup(*[Text(text, font_size=28, color=color) for text, color in [
             ("1  READ STRUCTURE", CYAN), ("2  DIFFERENTIATE PARTS", WHITE),
             ("3  ASSEMBLE THE RULE", VIOLET), ("4  SIMPLIFY", AMBER),
@@ -212,8 +228,121 @@ class GeneratedLessonScene(Scene):
 
     def symbolic_repair(self):
         source, derivative, capability = self.symbolic_model()
+        if capability == "chain" and self.is_seed_chain(source):
+            return self.chain_repair()
         wrong = Text("COMMON SHORTCUT", color=RED, font_size=28)
         warning = Text(f"repair the {capability.replace('_', ' ')}", color=CYAN, font_size=30).next_to(wrong, DOWN, buff=.65)
         source_formula = MathTex(self.ast_tex(source)).next_to(warning, DOWN, buff=.6)
         result = MathTex(rf"f'(x)={self.ast_tex(derivative)}", color=AMBER).next_to(source_formula, DOWN, buff=.7)
         self.play(Write(wrong)); self.play(Transform(wrong, warning)); self.play(Write(source_formula)); self.play(Write(result)); self.wait(2)
+
+    def chain_story_hook(self):
+        title = Text("TRACE THE SIGNAL", color=CYAN, font_size=38).to_edge(UP)
+        subtitle = Text("one input  /  two transformations  /  one final rate", color=MUTED, font_size=22).next_to(title, DOWN, buff=.22)
+        input_node = Circle(radius=.62, color=CYAN, fill_color="#101D2E", fill_opacity=.9).shift(LEFT * 5)
+        input_label = MathTex("x", color=CYAN).scale(1.15).move_to(input_node)
+        inner_gate = RoundedRectangle(width=3.05, height=2.05, corner_radius=.18, color=CYAN, fill_color="#0C1828", fill_opacity=.92).shift(LEFT * 1.9)
+        inner_title = Text("INNER TRANSFORM", color=CYAN, font_size=19).next_to(inner_gate.get_top(), DOWN, buff=.22)
+        inner_formula = MathTex("u=x^2+1", color=WHITE).scale(.9).move_to(inner_gate).shift(DOWN * .18)
+        outer_gate = RoundedRectangle(width=3.05, height=2.05, corner_radius=.18, color=VIOLET, fill_color="#171229", fill_opacity=.92).shift(RIGHT * 1.9)
+        outer_title = Text("OUTER TRANSFORM", color=VIOLET, font_size=19).next_to(outer_gate.get_top(), DOWN, buff=.22)
+        outer_formula = MathTex("y=u^3", color=WHITE).scale(.9).move_to(outer_gate).shift(DOWN * .18)
+        output_node = Circle(radius=.62, color=AMBER, fill_color="#2A2010", fill_opacity=.9).shift(RIGHT * 5)
+        output_label = MathTex("y", color=AMBER).scale(1.15).move_to(output_node)
+        route = Line(input_node.get_right(), output_node.get_left(), color=MUTED, stroke_opacity=.45)
+        pulse = Dot(input_node.get_center(), radius=.12, color=AMBER)
+        self.play(Write(title), FadeIn(subtitle))
+        self.play(Create(route), FadeIn(input_node), Write(input_label))
+        self.play(FadeIn(inner_gate), Write(inner_title), Write(inner_formula), run_time=1.3)
+        self.play(FadeIn(outer_gate), Write(outer_title), Write(outer_formula), run_time=1.3)
+        self.play(FadeIn(output_node), Write(output_label))
+        self.play(FadeIn(pulse)); self.play(pulse.animate.move_to(inner_gate.get_center()), Flash(inner_gate, color=CYAN), run_time=1.5)
+        self.play(pulse.animate.move_to(outer_gate.get_center()), Flash(outer_gate, color=VIOLET), run_time=1.5)
+        self.play(pulse.animate.move_to(output_node.get_center()), Flash(output_node, color=AMBER), run_time=1.5)
+        self.wait(1)
+
+    def chain_expression_structure(self):
+        heading = Text("READ OUTSIDE IN", color=CYAN, font_size=36).to_edge(UP)
+        formula = MathTex(r"f(x)=\left(x^2+1\right)^3", color=WHITE).scale(1.35).shift(UP * .75)
+        outer_box = SurroundingRectangle(formula, color=VIOLET, buff=.28, corner_radius=.18)
+        outer_label = Text("OUTER: cube the input", color=VIOLET, font_size=25).next_to(outer_box, UP, buff=.28)
+        inner = MathTex(r"u=x^2+1", color=CYAN).scale(1.2).shift(DOWN * 1.15 + LEFT * 2.25)
+        outer = MathTex(r"f=u^3", color=VIOLET).scale(1.2).shift(DOWN * 1.15 + RIGHT * 2.25)
+        bridge = Arrow(inner.get_right(), outer.get_left(), color=AMBER, buff=.22)
+        inner_label = Text("INNER SIGNAL", color=CYAN, font_size=18).next_to(inner, DOWN, buff=.25)
+        outer_small = Text("OUTER MACHINE", color=VIOLET, font_size=18).next_to(outer, DOWN, buff=.25)
+        self.play(Write(heading)); self.play(Write(formula), run_time=1.4)
+        self.play(Create(outer_box), FadeIn(outer_label, shift=DOWN))
+        self.play(TransformFromCopy(formula, inner), FadeIn(inner_label))
+        self.play(GrowArrow(bridge), TransformFromCopy(formula, outer), FadeIn(outer_small))
+        self.play(Indicate(inner, color=CYAN), Indicate(outer, color=VIOLET)); self.wait(2)
+
+    def chain_rule(self):
+        heading = Text("CHAIN RULE // LINK THE RATES", color=CYAN, font_size=34).to_edge(UP)
+        master = MathTex(r"\frac{dy}{dx}=\frac{dy}{du}\cdot\frac{du}{dx}", color=WHITE).scale(1.25).shift(UP * 1.55)
+        outer_card = RoundedRectangle(width=4.2, height=1.65, corner_radius=.18, color=VIOLET, fill_color="#171229", fill_opacity=.85).shift(LEFT * 2.5 + DOWN * .15)
+        inner_card = RoundedRectangle(width=4.2, height=1.65, corner_radius=.18, color=CYAN, fill_color="#0C1828", fill_opacity=.85).shift(RIGHT * 2.5 + DOWN * .15)
+        outer_formula = MathTex(r"\frac{dy}{du}=3u^2", color=VIOLET).move_to(outer_card)
+        inner_formula = MathTex(r"\frac{du}{dx}=2x", color=CYAN).move_to(inner_card)
+        link = MathTex(r"3\left(x^2+1\right)^2\cdot 2x", color=WHITE).scale(1.08).shift(DOWN * 1.65)
+        result = MathTex(r"f'(x)=6x\left(x^2+1\right)^2", color=AMBER).scale(1.2).shift(DOWN * 2.65)
+        self.play(Write(heading), Write(master))
+        self.play(FadeIn(outer_card), Write(outer_formula)); self.play(FadeIn(inner_card), Write(inner_formula))
+        self.play(Circumscribe(inner_formula, color=AMBER), run_time=1.1)
+        self.play(TransformFromCopy(VGroup(outer_formula, inner_formula), link), run_time=1.5)
+        self.play(TransformFromCopy(link, result), Flash(result, color=AMBER), run_time=1.5); self.wait(2)
+
+    def chain_worked_example(self):
+        heading = Text("ASSEMBLE THE DERIVATIVE", color=CYAN, font_size=34).to_edge(UP)
+        rail = Line(LEFT * 5.2, RIGHT * 5.2, color=MUTED, stroke_opacity=.35).shift(UP * 1.25)
+        labels = ["NAME", "OUTER RATE", "INNER RATE", "ASSEMBLE"]
+        formulas = [r"u=x^2+1", r"3u^2", r"2x", r"3u^2\cdot2x"]
+        colors = [CYAN, VIOLET, CYAN, AMBER]
+        nodes = VGroup()
+        for index, (label, formula, color) in enumerate(zip(labels, formulas, colors)):
+            x = -4.5 + index * 3
+            dot = Dot([x, 1.25, 0], color=color, radius=.11)
+            tag = Text(label, color=color, font_size=17).next_to(dot, UP, buff=.25)
+            math = MathTex(formula, color=WHITE).scale(.78).next_to(dot, DOWN, buff=.35)
+            nodes.add(VGroup(dot, tag, math))
+        substitute = MathTex(r"3\left(x^2+1\right)^2\cdot2x", color=WHITE).scale(1.05).shift(DOWN * 1.1)
+        result = MathTex(r"\boxed{f'(x)=6x\left(x^2+1\right)^2}", color=AMBER).scale(1.15).shift(DOWN * 2.25)
+        self.play(Write(heading), Create(rail))
+        for node in nodes:
+            self.play(FadeIn(node[0], scale=.5), Write(node[1]), Write(node[2]), run_time=.85)
+        self.play(TransformFromCopy(nodes[-1][2], substitute), run_time=1.25)
+        self.play(TransformMatchingTex(substitute.copy(), result), run_time=1.5)
+        self.play(Flash(result, color=AMBER)); self.wait(2)
+
+    def chain_summary(self):
+        heading = Text("THE COMPOSITION PROTOCOL", color=CYAN, font_size=34).to_edge(UP)
+        steps = [
+            ("01", "IDENTIFY", "outside in", CYAN),
+            ("02", "DIFFERENTIATE", "outer layer", VIOLET),
+            ("03", "PRESERVE", "inner expression", WHITE),
+            ("04", "MULTIPLY", "inner rate", AMBER),
+        ]
+        cards = VGroup()
+        for number, title, note, color in steps:
+            card = RoundedRectangle(width=2.7, height=1.65, corner_radius=.16, color=color, fill_color="#0C1220", fill_opacity=.9)
+            number_text = Text(number, color=color, font_size=18).move_to(card.get_corner(UL) + RIGHT * .38 + DOWN * .28)
+            title_text = Text(title, color=WHITE, font_size=19).move_to(card).shift(UP * .12)
+            note_text = Text(note, color=MUTED, font_size=16).next_to(title_text, DOWN, buff=.18)
+            cards.add(VGroup(card, number_text, title_text, note_text))
+        cards.arrange(RIGHT, buff=.22).shift(UP * .45)
+        result = MathTex(r"f'(x)=6x\left(x^2+1\right)^2", color=AMBER).scale(1.25).shift(DOWN * 1.75)
+        reminder = Text("Never lose the inner derivative.", color=CYAN, font_size=22).next_to(result, DOWN, buff=.4)
+        self.play(Write(heading))
+        self.play(LaggedStart(*[FadeIn(card, shift=UP * .3) for card in cards], lag_ratio=.2), run_time=2.5)
+        self.play(Write(result)); self.play(FadeIn(reminder, shift=UP), Flash(result, color=AMBER)); self.wait(2)
+
+    def chain_repair(self):
+        heading = Text("RESTORE THE MISSING LINK", color=CYAN, font_size=34).to_edge(UP)
+        wrong = MathTex(r"f'(x)=3\left(x^2+1\right)^2", color=RED).scale(1.15).shift(UP * .8)
+        missing = Text("INNER RATE MISSING", color=RED, font_size=21).next_to(wrong, DOWN, buff=.35)
+        factor = MathTex(r"\times\,2x", color=CYAN).scale(1.25).shift(DOWN * .6)
+        correct = MathTex(r"f'(x)=6x\left(x^2+1\right)^2", color=AMBER).scale(1.2).shift(DOWN * 1.8)
+        self.play(Write(heading), Write(wrong)); self.play(FadeIn(missing, shift=UP))
+        self.play(Wiggle(wrong), run_time=1.2); self.play(Write(factor), Flash(factor, color=CYAN))
+        self.play(TransformFromCopy(VGroup(wrong, factor), correct), run_time=1.5)
+        self.play(FadeOut(missing), Circumscribe(correct, color=AMBER)); self.wait(2)

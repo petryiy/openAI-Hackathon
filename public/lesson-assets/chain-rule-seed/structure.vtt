@@ -1,0 +1,4 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:13.500
+Read the expression from the outside in. The outer machine cubes its input. The inner machine produces x squared plus one. Naming the inner output u makes the structure visible: f equals u cubed.

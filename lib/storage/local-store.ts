@@ -24,16 +24,17 @@ async function writeJson(folder: string, id: string, value: unknown) {
 }
 
 async function readJson(folder: string, id: string) {
-  try {
-    const content = await readFile(
-      path.join(root, folder, `${safeId(id)}.json`),
-      "utf8",
-    );
-    return JSON.parse(content) as unknown;
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
-    throw error;
+  const filename = path.join(root, folder, `${safeId(id)}.json`);
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return JSON.parse(await readFile(filename, "utf8")) as unknown;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+      if (!(error instanceof SyntaxError) || attempt === 2) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 8));
+    }
   }
+  return null;
 }
 
 export async function saveJob(job: GenerationJob) {

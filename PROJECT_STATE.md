@@ -11,13 +11,13 @@ Last updated: 2026-07-21
 - Track B "cinematic Manim": always attempted per segment in the background — GPT-5 writes a Manim CE 0.20.1 `GeneratedScene`, validated by `renderer/validate.py` (AST allowlist) and executed in the hardened sandbox via `POST /v1/renders/custom`, with traceback-fed retries (≤3), a wall-clock budget, and a liveness probe that prevents wasted codegen. Completed segments hot-swap into the player; failed ones stay on the whiteboard.
 - Narration uses the ElevenLabs `with-timestamps` endpoint; character alignment drives word-highlighted captions and animation cues, degrading gracefully to captions + a synthetic clock when the free quota is exhausted.
 - PDF upload is real: the file is uploaded to the OpenAI Files API and passed as `input_file` so GPT-5 sees text and page images.
-- Verified live end-to-end with GPT-5 on text prompts (Bayes theorem, the quadratic parabola with a correct plotted curve and labeled points) and a PDF upload (vectors/dot product); 102 tests passing including the whiteboard DSL, timeline, alignment, schema-union regression, generic-provider, track-B, and the Python validator.
+- Verified live end-to-end with GPT-5 on text prompts (Bayes theorem, the quadratic parabola with a correct plotted curve and labeled points) and a PDF upload (vectors/dot product); 124 Vitest tests and all 9 Python renderer-policy tests pass, including whiteboard DSL, timeline, alignment, schema-union regression, generic-provider, Track B, and both offline Manim lessons.
 
-## Current primary flow
+## Derivative lesson compatibility flow
 
 - Derivative-first visual lesson from English pasted input, with an explicit unsupported-scope response outside the reviewed rule registry
 - Versioned `LessonSpecV1/V2` plus separately persisted `LessonStoryState` and `LessonLearnerState`
-- Five roughly 68-second total seeded teaching segments with committed Manim MP4s, ElevenLabs English narration, captions/transcripts, synchronized playback speed, replay, and reduced-motion SVG fallback
+- Two fully offline seeded Manim lessons: instantaneous change and Chain Rule Mission. Each has five committed MP4 segments, captions/transcripts, replay, and reduced-motion SVG fallback; the instantaneous-change lesson also includes committed ElevenLabs narration
 - Exactly two diagnostic pauses with direct answer submission and deterministic remediation selection
 - Dynamic power, sum, product, quotient, `sin`/`cos`/`exp`/`ln`, and one-layer chain-rule lessons through a strict 30-node expression AST
 - Four rule-specific practice steps with exact equivalence, misconception codes, second-error remediation, and a required smaller repair check
@@ -26,7 +26,7 @@ Last updated: 2026-07-21
 - OpenAI is limited to formula-free English story hooks and transition bridges; ElevenLabs George narration drives measured segment timing
 - New lesson, job, attempt, transfer, and rendered-asset APIs; the previous episode routes remain as a legacy path
 - Dedicated visual lesson loading page observes all six server-owned stages, survives refresh through the job URL, and hands off automatically to the published lesson
-- 61 tests passing, strict TypeScript passing, Next.js production build passing, renderer container smoke-tested, renderer-offline SVG publication smoke-tested, and desktop plus 390×844 browser QA completed
+- Strict TypeScript, lint, and the Next.js production build pass; the renderer container and renderer-offline SVG publication have been smoke-tested, with desktop plus 390×844 browser QA completed
 - Final **Aha** product name plus copy-ready Devpost, GPT-5.6/Codex disclosure, and current calculus demo narration
 
 ## Completed baseline
@@ -58,14 +58,12 @@ Last updated: 2026-07-21
 - Add learning evals for the six derivative capabilities before extending the grammar
 - Replace the process-local post-response lesson worker with a durable external job queue before multi-instance deployment
 - Extend the typed visual grammar to limits and definite integrals only after the derivative learning eval passes
-- Remove the optional PDF control from the calculus create experience or wire extraction
 - Record, review, and publish the three-minute demo
 - Add the Codex `/feedback` session ID and finish the submission checklist
 
 ## Known constraints
 
 - Local filesystem job storage is for the hackathon prototype, not multi-instance production.
-- Optional PDF/image extraction is not wired into the first vertical slice.
 - Generated lesson jobs and rendered media still use local filesystem persistence.
 - Dynamic symbolic lessons require OpenAI for constrained English language planning, then generate and cache ElevenLabs narration when its server-only key is configured; narration failure falls back to captions. The offline derivative lesson uses committed ElevenLabs audio and no external API.
-- The seeded lesson ships committed Manim MP4s. New parameterized lessons use the exact responsive SVG representation when `MANIM_RENDERER_URL` is unavailable.
+- Both derivative seeded lessons ship committed Manim MP4s. Dynamic derivative lessons fall back to exact responsive SVG when `MANIM_RENDERER_URL` is unavailable; generic STEM lessons retain their browser whiteboard segments whenever a Track B cinematic upgrade cannot render.

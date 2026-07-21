@@ -1,0 +1,4 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:19.500
+Let u equal x squared plus one. The outer derivative is three u squared, and the inner derivative is two x. Multiply them, substitute the inner expression back for u, and simplify to six x times x squared plus one, squared.

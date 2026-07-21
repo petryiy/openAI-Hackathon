@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { buildDerivativeLesson, UnsupportedCalculusScopeError } from "@/lib/lesson/builder";
 import { LessonSpecSchema } from "@/lib/lesson/schema";
 import { seededDerivativeLesson } from "@/lib/lesson/seeded-derivative";
+import { CHAIN_RULE_SAMPLE } from "@/lib/lesson/constants";
+import { SEEDED_CHAIN_RULE_LESSON_ID, seededChainRuleLesson } from "@/lib/lesson/seeded-chain-rule";
 
 describe("calculus lesson contract", () => {
   it("contains exactly two checkpoints and one unassisted transfer", () => {
@@ -13,6 +15,21 @@ describe("calculus lesson contract", () => {
     expect(seededDerivativeLesson.assets.segments.every((asset) => asset.renderMode === "manim" && asset.videoUrl?.endsWith(".mp4"))).toBe(true);
     expect(seededDerivativeLesson.segments.reduce((sum, item) => sum + item.durationMs, 0)).toBeGreaterThanOrEqual(60_000);
     expect(seededDerivativeLesson.segments.reduce((sum, item) => sum + item.durationMs, 0)).toBeLessThanOrEqual(90_000);
+  });
+
+  it("ships the chain-rule mission as a complete offline Manim lesson", () => {
+    const parsed = LessonSpecSchema.parse(seededChainRuleLesson);
+    if (parsed.schemaVersion !== 2) throw new Error("Expected the chain-rule V2 lesson");
+    expect(parsed.checkpoints).toHaveLength(2);
+    expect(seededChainRuleLesson.id).toBe(SEEDED_CHAIN_RULE_LESSON_ID);
+    expect(seededChainRuleLesson.schemaVersion).toBe(2);
+    expect(seededChainRuleLesson.capability).toBe("chain");
+    expect(seededChainRuleLesson.transferTask.id).toBe("transfer");
+    expect(seededChainRuleLesson.assets.segments).toHaveLength(5);
+    expect(seededChainRuleLesson.assets.segments.every((asset) =>
+      asset.renderMode === "manim" && asset.videoUrl?.startsWith("/lesson-assets/chain-rule-seed/")
+    )).toBe(true);
+    expect(buildDerivativeLesson(CHAIN_RULE_SAMPLE, "en").id).toBe(SEEDED_CHAIN_RULE_LESSON_ID);
   });
 
   it("builds a versioned symbolic lesson while keeping code-owned lesson templates", () => {

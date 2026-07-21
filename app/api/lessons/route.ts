@@ -9,6 +9,7 @@ import { generateLessonNarrationAssets } from "@/lib/media/elevenlabs-client";
 import { planDerivativeLessonLanguage } from "@/lib/ai/lesson-provider";
 import { classifyGenerationError } from "@/lib/ai/provider";
 import { processGenericLessonJob } from "@/lib/lesson/generic-pipeline";
+import { isSeededLessonId } from "@/lib/lesson/seeded-lessons";
 
 export const runtime = "nodejs";
 
@@ -88,6 +89,15 @@ async function processDerivativeLessonJob(job: LessonJob) {
   try {
     await update(0, 10);
     const deterministicDraft = buildDerivativeLesson(job.sourceInput, job.locale);
+    if (isSeededLessonId(deterministicDraft.id)) {
+      await update(1, 28);
+      await update(3, 60);
+      await update(4, 72);
+      await update(5, 92);
+      const lesson = await saveLesson(deterministicDraft);
+      await saveLessonJob({ ...currentJob, status: "complete", stageIndex: LESSON_PIPELINE_STAGES.length - 1, progress: 100, lessonId: lesson.id, updatedAt: new Date().toISOString() });
+      return;
+    }
     await verifyLessonMath(deterministicDraft);
     await update(1, 28);
     await update(2, 45);
