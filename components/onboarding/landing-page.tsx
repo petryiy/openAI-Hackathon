@@ -55,7 +55,7 @@ export function LandingPage() {
           animate={entering
             ? { opacity: 0, x: -28, scale: 0.975 }
             : { opacity: 1, x: 0, scale: 1 }}
-          transition={{ duration: reducedMotion ? 0.12 : 0.38, delay: entering ? 0.56 : 0 }}
+          transition={{ duration: reducedMotion ? 0.12 : 0.3, delay: entering ? 0.08 : 0 }}
         >
           <p className="landing-eyebrow"><span>00</span> Adaptive visual learning</p>
           <h1>

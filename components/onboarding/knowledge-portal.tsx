@@ -37,9 +37,12 @@ function PortalRig({ phase, reducedMotion, compact }: PortalProps) {
     const compiling = phase === "compiling" || phase === "episode-ready";
     const targetZ = entering ? 2.25 : compiling ? 5.15 : creating ? 5.8 : 6.4;
     const ease = 1 - Math.pow(0.001, delta);
+    // Idle uses a slower settle so returning home reads as the portal gliding
+    // back to its landing spot instead of snapping there.
+    const settle = phase === "idle" ? 1 - Math.pow(0.03, delta) : ease;
 
     if (!camera.current) return;
-    camera.current.position.z = THREE.MathUtils.lerp(camera.current.position.z, targetZ, ease);
+    camera.current.position.z = THREE.MathUtils.lerp(camera.current.position.z, targetZ, settle);
     camera.current.position.x = THREE.MathUtils.lerp(camera.current.position.x, entering || creating || compiling ? 0 : state.pointer.x * 0.18, ease);
     camera.current.position.y = THREE.MathUtils.lerp(camera.current.position.y, entering ? 0 : state.pointer.y * 0.12, ease);
     camera.current.lookAt(0, 0, 0);
@@ -48,11 +51,11 @@ function PortalRig({ phase, reducedMotion, compact }: PortalProps) {
     group.current.position.x = THREE.MathUtils.lerp(
       group.current.position.x,
       entering || compiling ? 0 : creating ? compact ? 0 : 0.85 : baseX,
-      ease,
+      settle,
     );
     const targetScale = entering ? 1.6 : compiling ? (phase === "episode-ready" ? 0.22 : compact ? 0.92 : 1.12) : creating ? compact ? 0.86 : 1.3 : compact ? 0.82 : 1;
     group.current.scale.setScalar(
-      THREE.MathUtils.lerp(group.current.scale.x, targetScale, ease),
+      THREE.MathUtils.lerp(group.current.scale.x, targetScale, settle),
     );
 
     if (!reducedMotion) {
