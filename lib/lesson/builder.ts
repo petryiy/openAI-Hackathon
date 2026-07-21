@@ -1,5 +1,6 @@
 import { buildSymbolicDerivativeLesson } from "@/lib/lesson/capabilities";
-import { DERIVATIVE_SAMPLE } from "@/lib/lesson/constants";
+import { CHAIN_RULE_SAMPLE, DERIVATIVE_SAMPLE } from "@/lib/lesson/constants";
+import { seededChainRuleLesson } from "@/lib/lesson/seeded-chain-rule";
 import { seededDerivativeLesson } from "@/lib/lesson/seeded-derivative";
 import { evaluateExpression, parseMathExpression } from "@/lib/math/expression";
 import type { LessonSpec } from "@/lib/lesson/schema";
@@ -37,6 +38,7 @@ function extractEvaluationPoint(source: string) {
 export function buildDerivativeLesson(sourceInput: string, locale: "en"): LessonSpec {
   if (locale !== "en") throw new UnsupportedCalculusScopeError("Only English lessons are supported.");
   if (sourceInput.trim() === DERIVATIVE_SAMPLE) return seededDerivativeLesson;
+  if (sourceInput.trim() === CHAIN_RULE_SAMPLE) return seededChainRuleLesson;
   if (!DERIVATIVE_INTENT.test(sourceInput) || UNSUPPORTED_TOPICS.test(sourceInput)) {
     throw new UnsupportedCalculusScopeError("This version supports one-variable derivatives using power, sum, product, quotient, standard-function, and simple chain rules. Try f(x)=(x^2+1)^3.");
   }

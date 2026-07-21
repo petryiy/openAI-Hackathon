@@ -1,12 +1,12 @@
 # Project state
 
-Last updated: 2026-07-20
+Last updated: 2026-07-21
 
 ## Current primary flow
 
 - Derivative-first visual lesson from English pasted input, with an explicit unsupported-scope response outside the reviewed rule registry
 - Versioned `LessonSpecV1/V2` plus separately persisted `LessonStoryState` and `LessonLearnerState`
-- Five roughly 68-second total seeded teaching segments with committed Manim MP4s, ElevenLabs English narration, captions/transcripts, synchronized playback speed, replay, and reduced-motion SVG fallback
+- Two fully offline seeded Manim lessons: instantaneous change and Chain Rule Mission. Each has five committed MP4 segments, captions/transcripts, replay, and reduced-motion SVG fallback; the instantaneous-change lesson also includes committed ElevenLabs narration
 - Exactly two diagnostic pauses with direct answer submission and deterministic remediation selection
 - Dynamic power, sum, product, quotient, `sin`/`cos`/`exp`/`ln`, and one-layer chain-rule lessons through a strict 30-node expression AST
 - Four rule-specific practice steps with exact equivalence, misconception codes, second-error remediation, and a required smaller repair check
@@ -14,7 +14,7 @@ Last updated: 2026-07-20
 - Twenty-one allowlisted Manim 0.20.1 templates plus a SymPy verification endpoint in an isolated Docker service, content-addressed caching, strict AST input, stable posters, and responsive deterministic SVG fallback
 - OpenAI is limited to formula-free English story hooks and transition bridges; ElevenLabs George narration drives measured segment timing
 - New lesson, job, attempt, transfer, and rendered-asset APIs; the previous episode routes remain as a legacy path
-- 58 tests passing, strict TypeScript passing, Next.js production build passing, renderer container smoke-tested, and desktop plus 390×844 browser QA completed
+- 59 tests passing, strict TypeScript passing, Next.js production build passing, renderer container smoke-tested, and desktop plus 390×844 browser QA completed
 
 ## Completed baseline
 
@@ -55,4 +55,4 @@ Last updated: 2026-07-20
 - Optional PDF/image extraction is not wired into the first vertical slice.
 - Generated lesson jobs and rendered media still use local filesystem persistence.
 - Dynamic symbolic lessons require OpenAI for constrained English language planning, then generate and cache ElevenLabs narration when its server-only key is configured; narration failure falls back to captions. The offline derivative lesson uses committed ElevenLabs audio and no external API.
-- The seeded lesson ships committed Manim MP4s. New parameterized lessons use the exact responsive SVG representation when `MANIM_RENDERER_URL` is unavailable.
+- Both seeded lessons ship committed Manim MP4s. New parameterized lessons use the exact responsive SVG representation when `MANIM_RENDERER_URL` is unavailable.

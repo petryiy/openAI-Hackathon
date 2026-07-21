@@ -1,0 +1,4 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:11.500
+A flight computer receives x, transforms it into x squared plus one, then cubes that result. To predict the final signal's change, we must trace change through both transformation gates.
