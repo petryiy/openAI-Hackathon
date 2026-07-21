@@ -37,6 +37,7 @@ export function WhiteboardLessonPlayer({ lesson: initialLesson }: { lesson: Less
   const audioRef = useRef<HTMLAudioElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const seekRef = useRef<HTMLInputElement>(null);
+  const scrubbingRef = useRef(false);
   const pendingLessonRef = useRef<LessonSpecV3 | null>(null);
   const playingRef = useRef(false);
   playingRef.current = playing;
@@ -146,17 +147,43 @@ export function WhiteboardLessonPlayer({ lesson: initialLesson }: { lesson: Less
         clockRef.current.ms = Math.min(clockRef.current.ms + delta * speedRef.current, durationMs);
         if (clockRef.current.ms >= durationMs) setPlaying(false);
       }
-      if (seekRef.current) seekRef.current.value = String(Math.round(clockRef.current.ms));
+      // While the learner is dragging the thumb, the input owns its value;
+      // writing to it every frame would snap the thumb back and make the bar
+      // impossible to drag.
+      if (seekRef.current && !scrubbingRef.current) seekRef.current.value = String(Math.round(clockRef.current.ms));
       frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [currentSegmentIndex, durationMs]);
 
+  function beginScrub() {
+    scrubbingRef.current = true;
+    // The pointer can be released anywhere on the page (or even outside the
+    // window), so the drag must end on window-level events — waiting for a
+    // pointerup on the input itself would leave the bar frozen.
+    const endScrub = () => {
+      scrubbingRef.current = false;
+      window.removeEventListener("pointerup", endScrub);
+      window.removeEventListener("pointercancel", endScrub);
+    };
+    window.addEventListener("pointerup", endScrub);
+    window.addEventListener("pointercancel", endScrub);
+  }
+
   function seekTo(ms: number) {
     clockRef.current.ms = ms;
-    if (audioRef.current) audioRef.current.currentTime = ms / 1_000;
-    if (videoRef.current && !audioRef.current) videoRef.current.currentTime = ms / 1_000;
+    const audio = audioRef.current;
+    const video = videoRef.current;
+    if (audio) audio.currentTime = ms / 1_000;
+    if (video) {
+      // An upgraded segment's video is rate-locked to the narration, so its
+      // position must be scaled by the duration ratio when both exist.
+      const scale = audio?.duration && Number.isFinite(audio.duration) && video.duration && Number.isFinite(video.duration)
+        ? video.duration / audio.duration
+        : 1;
+      video.currentTime = (ms / 1_000) * scale;
+    }
   }
 
   function applyPendingUpgrade() {
@@ -278,6 +305,7 @@ export function WhiteboardLessonPlayer({ lesson: initialLesson }: { lesson: Less
               <div className="whiteboard-seek">
                 <input ref={seekRef} type="range" min={0} max={durationMs} defaultValue={0} step={100}
                   aria-label="Seek within this section"
+                  onPointerDown={beginScrub}
                   onChange={(event) => seekTo(Number(event.target.value))} />
               </div>
               <div className="lesson-controls">
