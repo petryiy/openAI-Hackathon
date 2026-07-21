@@ -203,6 +203,8 @@ export function validateWhiteboardScene(scene: WhiteboardScene, narration: strin
   return problems;
 }
 
+const clampCoord = (value: number) => Math.max(-1_000, Math.min(1_000, value));
+
 function synthesizeAxes(mathElements: WhiteboardElement[]): WhiteboardElement {
   const xs: number[] = [];
   const ys: number[] = [];
@@ -228,47 +230,134 @@ function synthesizeAxes(mathElements: WhiteboardElement[]): WhiteboardElement {
   const yMinRaw = ys.length ? Math.min(...ys) : -5;
   const yMaxRaw = ys.length ? Math.max(...ys) : 5;
   const yPad = Math.max(1, (yMaxRaw - yMinRaw) * 0.12);
-  return {
+  // Sampled y-values (e.g. exp on a wide range) can dwarf the ±1000 schema
+  // bound, and a synthesized frame must never make the final parse throw.
+  return fixRanges({
     id: "axes-auto", type: "axes",
-    xMin: xMin === xMax ? xMin - 1 : xMin,
-    xMax: xMin === xMax ? xMax + 1 : xMax,
-    yMin: Math.floor(yMinRaw - yPad),
-    yMax: Math.ceil(yMaxRaw + yPad),
+    xMin: clampCoord(xMin === xMax ? xMin - 1 : xMin),
+    xMax: clampCoord(xMin === xMax ? xMax + 1 : xMax),
+    yMin: clampCoord(Math.floor(yMinRaw - yPad)),
+    yMax: clampCoord(Math.ceil(yMaxRaw + yPad)),
     xLabel: "x", yLabel: "y",
-  };
+  });
+}
+
+function fixRanges(element: WhiteboardElement): WhiteboardElement {
+  if (element.type !== "axes" && element.type !== "plot") return element;
+  let { xMin, xMax } = element;
+  if (xMin > xMax) [xMin, xMax] = [xMax, xMin];
+  if (xMin === xMax) { xMin = clampCoord(xMin - 1); xMax = clampCoord(xMax + 1); }
+  if (element.type === "plot") return { ...element, xMin, xMax };
+  let { yMin, yMax } = element;
+  if (yMin > yMax) [yMin, yMax] = [yMax, yMin];
+  if (yMin === yMax) { yMin = clampCoord(yMin - 1); yMax = clampCoord(yMax + 1); }
+  return { ...element, xMin, xMax, yMin, yMax };
 }
 
 /**
  * Repair the mechanically-fixable mistakes an LLM commonly makes so a whole
- * lesson is not rejected over a stray reference: synthesize a missing axes for
- * math elements, drop actions/labels that point at elements that do not exist,
- * and downgrade a narration anchor that does not quote the narration to a
- * proportional cue. Genuine content errors (bad plot grammar, broken KaTeX)
- * are left for validateWhiteboardScene to surface.
+ * lesson is not rejected over a stray reference: rename duplicate ids, fix
+ * reversed ranges, collapse multiple axes into one that covers every math
+ * element, synthesize a missing axes, drop actions/labels that point at
+ * elements that do not exist, downgrade narration anchors that do not quote
+ * the narration, and downgrade unusable move/morph actions. Genuine content
+ * errors (bad plot grammar, broken KaTeX) are left for
+ * validateWhiteboardScene to surface so a retry can fix them properly.
  */
 export function sanitizeWhiteboardScene(scene: WhiteboardScene, narration: string): WhiteboardScene {
-  let elements = [...scene.elements];
+  // Rename later duplicates so every id is unique; actions keep addressing the
+  // first occurrence, which is what the model almost always means.
+  const seenIds = new Set<string>();
+  let elements = scene.elements.map((element) => {
+    let id = element.id;
+    let suffix = 2;
+    while (seenIds.has(id)) {
+      // Truncate the base, never the suffix, so each candidate is distinct
+      // even at the 40-character id cap and the loop always terminates.
+      const tag = `-${suffix}`;
+      id = `${element.id.slice(0, 40 - tag.length)}${tag}`;
+      suffix += 1;
+    }
+    seenIds.add(id);
+    return id === element.id ? element : { ...element, id };
+  }).map(fixRanges);
+
+  // At most one axes per scene: replace them all with a single frame that
+  // covers every math element (and every original axes range), keeping the
+  // first axes' id and labels so actions still resolve.
+  const axesElements = elements.filter((element) => element.type === "axes") as Extract<WhiteboardElement, { type: "axes" }>[];
   const mathElements = elements.filter((element) => MATH_SPACE_TYPES.has(element.type));
-  const hasAxes = elements.some((element) => element.type === "axes");
-  if (mathElements.length > 0 && !hasAxes && elements.length < 12) {
-    elements = [synthesizeAxes(mathElements), ...elements];
+  const droppedAxesIds = new Set<string>();
+  if (axesElements.length > 1) {
+    const synthesized = synthesizeAxes(mathElements) as Extract<WhiteboardElement, { type: "axes" }>;
+    const first = axesElements[0];
+    const merged = fixRanges({
+      ...first,
+      xMin: clampCoord(Math.min(synthesized.xMin, ...axesElements.map((axes) => axes.xMin))),
+      xMax: clampCoord(Math.max(synthesized.xMax, ...axesElements.map((axes) => axes.xMax))),
+      yMin: clampCoord(Math.min(synthesized.yMin, ...axesElements.map((axes) => axes.yMin))),
+      yMax: clampCoord(Math.max(synthesized.yMax, ...axesElements.map((axes) => axes.yMax))),
+    });
+    for (const axes of axesElements.slice(1)) droppedAxesIds.add(axes.id);
+    elements = elements.flatMap((element): WhiteboardElement[] => element.type !== "axes" ? [element] : element.id === first.id ? [merged] : []);
+  } else if (mathElements.length > 0 && axesElements.length === 0) {
+    if (elements.length >= 12) {
+      // The frame must fit: make room by dropping the least structural
+      // element (labels first, plots and math geometry last).
+      const dropPreference: WhiteboardElement["type"][] = ["label", "line", "arrow", "rect", "circle", "text", "formula", "mathline", "point"];
+      const types = elements.map((element) => element.type);
+      for (const type of dropPreference) {
+        const index = types.lastIndexOf(type);
+        if (index >= 0) { elements = elements.filter((_, position) => position !== index); break; }
+      }
+    }
+    if (elements.length < 12) elements = [synthesizeAxes(mathElements), ...elements];
   }
+  const survivingAxesId = (elements.find((element) => element.type === "axes"))?.id;
 
   const ids = new Set(elements.map((element) => element.id));
   // Drop labels that point at a missing target; they would render nothing.
   elements = elements.filter((element) => element.type !== "label" || ids.has(element.targetId));
+  if (elements.length === 0) {
+    // Everything was dropped (e.g. only orphaned labels survived upstream
+    // filtering) — keep the scene legal so the lesson can still publish.
+    elements = [{
+      id: "note-auto", type: "text", region: "main", x: null, y: null,
+      content: "Listen to the narration for this step", size: "md", color: "muted",
+    }];
+  }
   const liveIds = new Set(elements.map((element) => element.id));
+  const byId = new Map(elements.map((element) => [element.id, element]));
 
   const lowerNarration = narration.toLowerCase();
   const total = scene.actions.length;
   const actions = scene.actions
+    // Actions aimed at a merged-away axes now address the surviving frame.
+    .map((action) => droppedAxesIds.has(action.targetId) && survivingAxesId ? { ...action, targetId: survivingAxesId } : action)
     .filter((action) => liveIds.has(action.targetId))
-    .filter((action) => action.op !== "morph" || (action.toTargetId != null && liveIds.has(action.toTargetId)))
     .map((action, index) => {
-      if (action.anchor.kind === "narration" && !lowerNarration.includes(action.anchor.text.toLowerCase())) {
-        return { ...action, anchor: { kind: "ratio" as const, value: total > 0 ? index / total : 0 } };
+      let next = action;
+      if (next.op === "morph") {
+        const to = next.toTargetId != null ? byId.get(next.toTargetId) : undefined;
+        const from = byId.get(next.targetId);
+        if (!to || !from || !MORPHABLE_TYPES.has(from.type) || to.type !== from.type) {
+          // An unusable morph still needs its reveal: show the destination if
+          // it exists, otherwise just emphasize the source.
+          next = to
+            ? { ...next, op: "appear", targetId: to.id, toTargetId: null }
+            : { ...next, op: "highlight", toTargetId: null };
+        }
       }
-      return action;
+      if (next.op === "move") {
+        const target = byId.get(next.targetId);
+        if ((next.toX == null && next.toY == null) || !target || !MOVABLE_TYPES.has(target.type)) {
+          next = { ...next, op: "pulse", toX: null, toY: null };
+        }
+      }
+      if (next.anchor.kind === "narration" && !lowerNarration.includes(next.anchor.text.toLowerCase())) {
+        next = { ...next, anchor: { kind: "ratio" as const, value: total > 0 ? index / total : 0 } };
+      }
+      return next;
     });
 
   // A scene must keep at least one element and one action.
@@ -279,4 +368,40 @@ export function sanitizeWhiteboardScene(scene: WhiteboardScene, narration: strin
       : [];
 
   return WhiteboardSceneSchema.parse({ elements, actions: safeActions });
+}
+
+/**
+ * Last-resort rescue for a scene that still fails validation after the model's
+ * retries: drop the elements that cannot render (plots outside the expression
+ * grammar, formulas whose KaTeX does not compile) together with everything
+ * that referenced them, then re-run the mechanical sanitizer. A lesson missing
+ * one visual beats a lesson that never publishes.
+ */
+export function dropUnrenderableElements(scene: WhiteboardScene, narration: string): WhiteboardScene {
+  const keep = scene.elements.filter((element) => {
+    if (element.type === "plot") {
+      try { parseMathExpression(element.expression); return true; } catch { return false; }
+    }
+    if (element.type === "formula") {
+      try { katex.renderToString(element.katex, { throwOnError: true, displayMode: true }); return true; } catch { return false; }
+    }
+    return true;
+  });
+  // Cascade before the empty-check: a label whose target was just dropped
+  // must not count as the sole survivor, or the scene ends up empty.
+  const keepIds = new Set(keep.map((element) => element.id));
+  const cascaded = keep.filter((element) => element.type !== "label" || keepIds.has(element.targetId));
+  const fallback: WhiteboardElement[] = cascaded.length > 0 ? cascaded : [{
+    id: "note-auto", type: "text", region: "main", x: null, y: null,
+    content: "Listen to the narration for this step", size: "md", color: "muted",
+  }];
+  const liveIds = new Set(fallback.map((element) => element.id));
+  const actions = scene.actions.filter((action) => liveIds.has(action.targetId));
+  return sanitizeWhiteboardScene(WhiteboardSceneSchema.parse({
+    elements: fallback,
+    actions: actions.length > 0 ? actions : [{
+      op: "appear" as const, targetId: fallback[0].id, toTargetId: null, toX: null, toY: null,
+      durationMs: 800, anchor: { kind: "ratio" as const, value: 0 },
+    }],
+  }), narration);
 }

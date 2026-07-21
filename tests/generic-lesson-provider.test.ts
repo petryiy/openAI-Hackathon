@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { collectDraftProblems, modelLessonToV3, runMathChecks } from "@/lib/ai/generic-lesson-provider";
+import { collectDraftProblems, modelLessonToV3, rescueDraft, runMathChecks } from "@/lib/ai/generic-lesson-provider";
 import { LessonSpecV3Schema } from "@/lib/lesson/schema";
 import { whiteboardFixtureLesson } from "@/lib/lesson/fixture-whiteboard";
 
@@ -107,6 +107,24 @@ describe("generic lesson provider", () => {
     const lesson = modelLessonToV3(modelDraft(), { sourceInput: "x", level: "secondary", lessonId: "chk2" });
     const ungrammatical = { ...lesson, mathChecks: [{ kind: "equivalent" as const, expression: "tan(x)", expected: "sin(x)/cos(x)", atX: null }] };
     expect(runMathChecks(ungrammatical)).toEqual([]);
+  });
+
+  it("rescues a draft whose visuals cannot render instead of failing the lesson", () => {
+    const draft: Parameters<typeof collectDraftProblems>[0] = modelDraft();
+    // A plot outside the grammar plus a broken display formula: exactly the
+    // kind of draft that used to exhaust retries and kill the whole job.
+    draft.segments[0].scene.elements = [...draft.segments[0].scene.elements,
+      { id: "bad", type: "plot", expression: "tan(x)", xMin: -1, xMax: 1, color: "amber", markPointAtX: null }];
+    draft.segments[0].displayFormulas = [...draft.segments[0].displayFormulas, { id: "broken", katex: "\\frac{1}", label: null }];
+    expect(collectDraftProblems(draft).length).toBeGreaterThan(0);
+
+    const rescued = rescueDraft(draft);
+    expect(collectDraftProblems(rescued)).toEqual([]);
+    expect(rescued.segments[0].scene.elements.some((element) => element.id === "bad")).toBe(false);
+    expect(rescued.segments[0].displayFormulas.some((formula) => formula.id === "broken")).toBe(false);
+    // The healthy visual survives the rescue.
+    expect(rescued.segments[0].scene.elements.some((element) => element.id === "ramp")).toBe(true);
+    expect(() => modelLessonToV3(rescued, { sourceInput: "x", level: "secondary", lessonId: "rescued1" })).not.toThrow();
   });
 
   it("keeps the committed fixture consistent with the whiteboard contract", () => {

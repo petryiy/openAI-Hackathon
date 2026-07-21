@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import katex from "katex";
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
@@ -7,7 +8,7 @@ import { GENERIC_LESSON_SYSTEM_PROMPT, buildGenericLessonUserPrompt, WHITEBOARD_
 import {
   differentiate, evaluateExpression, expressionsEquivalent, parseMathExpression,
 } from "@/lib/math/expression";
-import { sanitizeWhiteboardScene, validateWhiteboardScene } from "@/lib/lesson/whiteboard-dsl";
+import { dropUnrenderableElements, sanitizeWhiteboardScene, validateWhiteboardScene } from "@/lib/lesson/whiteboard-dsl";
 import {
   GenericSegmentSchema, LessonSpecV3Schema, MathCheckSchema, type LessonSpecV3,
 } from "@/lib/lesson/schema";
@@ -76,6 +77,24 @@ export function sanitizeDraft(model: ModelLessonV3): ModelLessonV3 {
     segments: model.segments.map((segment) => ({
       ...segment,
       scene: sanitizeWhiteboardScene(segment.scene, segment.narration),
+    })),
+  };
+}
+
+/**
+ * Aggressive last-attempt rescue: strip the scene elements that cannot render
+ * at all. Only used when retry feedback has failed, because it trades a bit of
+ * visual richness for a lesson that actually publishes.
+ */
+export function rescueDraft(model: ModelLessonV3): ModelLessonV3 {
+  return {
+    ...model,
+    segments: model.segments.map((segment) => ({
+      ...segment,
+      displayFormulas: segment.displayFormulas.filter((formula) => {
+        try { katex.renderToString(formula.katex, { throwOnError: true, displayMode: true }); return true; } catch { return false; }
+      }),
+      scene: dropUnrenderableElements(segment.scene, segment.narration),
     })),
   };
 }
@@ -153,10 +172,19 @@ export class LessonPlanInvalidError extends Error {
 export async function generateGenericLesson(input: GenerationInput): Promise<LessonSpecV3> {
   let repairs: string[] = [];
   let lastProblems: string[] = [];
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  const attempts = 3;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
     const sanitized = sanitizeDraft(await requestLesson(input, repairs));
-    const problems = collectDraftProblems(sanitized);
+    let problems = collectDraftProblems(sanitized);
     if (problems.length === 0) return modelLessonToV3(sanitized, input);
+    if (attempt === attempts - 1) {
+      // Retry feedback did not converge; publish a rescued lesson (broken
+      // visuals stripped) rather than fail the learner outright.
+      const rescued = rescueDraft(sanitized);
+      const rescuedProblems = collectDraftProblems(rescued);
+      if (rescuedProblems.length === 0) return modelLessonToV3(rescued, input);
+      problems = rescuedProblems;
+    }
     lastProblems = problems;
     repairs = problems.slice(0, 12);
   }

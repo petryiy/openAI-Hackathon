@@ -1,5 +1,5 @@
 import { readLesson, saveLesson } from "@/lib/storage/local-store";
-import { generateManimSceneCode, looksLikeValidScene } from "@/lib/ai/manim-code-provider";
+import { generateManimSceneCode, lintManimCode, looksLikeValidScene } from "@/lib/ai/manim-code-provider";
 import { CustomRenderError, isRendererReachable, renderCustomScene } from "@/lib/media/manim-custom-client";
 import type { LessonSpecV3 } from "@/lib/lesson/schema";
 
@@ -67,6 +67,10 @@ export async function upgradeLessonWithManim(lessonId: string): Promise<void> {
         const code = await generateManimSceneCode({ segment, targetDurationMs: durationMs, previousCode, previousError });
         previousCode = code;
         if (!looksLikeValidScene(code)) { previousError = "The scene must define class GeneratedScene(Scene) with a construct method."; continue; }
+        // Known-fatal API mistakes are caught here for free instead of burning
+        // a 90-150s render attempt to learn the same thing from a traceback.
+        const lintProblem = lintManimCode(code);
+        if (lintProblem) { previousError = lintProblem; continue; }
         const rendered = await renderCustomScene(code, segment.narration, durationMs);
         await setSegmentStatus(lessonId, segment.id, "complete", {
           videoUrl: rendered.videoUrl,

@@ -7,10 +7,14 @@ const renderCustomScene = vi.fn();
 const isRendererReachable = vi.fn();
 
 vi.mock("@/lib/storage/local-store", () => ({ readLesson, saveLesson }));
-vi.mock("@/lib/ai/manim-code-provider", () => ({
-  generateManimSceneCode,
-  looksLikeValidScene: (code: string) => code.includes("class GeneratedScene(Scene)"),
-}));
+vi.mock("@/lib/ai/manim-code-provider", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/ai/manim-code-provider")>("@/lib/ai/manim-code-provider");
+  return {
+    generateManimSceneCode,
+    looksLikeValidScene: (code: string) => code.includes("class GeneratedScene(Scene)"),
+    lintManimCode: actual.lintManimCode,
+  };
+});
 vi.mock("@/lib/media/manim-custom-client", async () => {
   const actual = await vi.importActual<typeof import("@/lib/media/manim-custom-client")>("@/lib/media/manim-custom-client");
   return { ...actual, renderCustomScene, isRendererReachable };
@@ -68,6 +72,26 @@ describe("track B upgrade", () => {
 
     expect(stored.assets.segments[0].renderMode).toBe("whiteboard");
     expect(stored.upgrade.trackB[0].status).toBe("failed");
+  });
+
+  it("catches known-bad Manim API with the lint instead of paying for a render", async () => {
+    const { upgradeLessonWithManim } = await import("@/lib/lesson/track-b");
+    let stored = lessonWith(["s1"]);
+    readLesson.mockImplementation(async () => stored);
+    saveLesson.mockImplementation(async (lesson) => { stored = lesson; return lesson; });
+    isRendererReachable.mockResolvedValue(true);
+    const deprecatedCode = "from manim import *\nclass GeneratedScene(Scene):\n    def construct(self):\n        curve = ParametricFunction(lambda t: [t, t, 0], t_min=0, t_max=1)\n        self.play(ShowCreation(curve))\n";
+    generateManimSceneCode.mockResolvedValueOnce(deprecatedCode).mockResolvedValueOnce(VALID_CODE);
+    renderCustomScene.mockResolvedValueOnce({ videoUrl: "/v/s1.mp4", posterUrl: "/p/s1.png", captionsUrl: "/c/s1.vtt", durationMs: 12_000, checksum: "abc" });
+
+    await upgradeLessonWithManim("lesson1");
+
+    // The deprecated first attempt must never reach the renderer.
+    expect(renderCustomScene).toHaveBeenCalledTimes(1);
+    expect(generateManimSceneCode).toHaveBeenCalledTimes(2);
+    const secondCall = generateManimSceneCode.mock.calls[1][0];
+    expect(secondCall.previousError).toContain("t_range");
+    expect(stored.upgrade.trackB[0].status).toBe("complete");
   });
 
   it("does no codegen at all when the renderer is unreachable", async () => {
