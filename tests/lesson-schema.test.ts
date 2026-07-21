@@ -27,7 +27,9 @@ describe("calculus lesson contract", () => {
     expect(seededChainRuleLesson.transferTask.id).toBe("transfer");
     expect(seededChainRuleLesson.assets.segments).toHaveLength(5);
     expect(seededChainRuleLesson.assets.segments.every((asset) =>
-      asset.renderMode === "manim" && asset.videoUrl?.startsWith("/lesson-assets/chain-rule-seed/")
+      asset.renderMode === "manim"
+      && asset.videoUrl?.startsWith("/lesson-assets/chain-rule-seed/")
+      && asset.audioUrl?.startsWith("/lesson-assets/chain-rule-seed/")
     )).toBe(true);
     expect(buildDerivativeLesson(CHAIN_RULE_SAMPLE, "en").id).toBe(SEEDED_CHAIN_RULE_LESSON_ID);
   });

@@ -17,6 +17,7 @@ export function LessonGenerationClient({ jobId }: { jobId: string }) {
   const [elapsed, setElapsed] = useState(0);
   const startedAtRef = useRef(0);
   const navigationStartedRef = useRef(false);
+  const navigationTimerRef = useRef<number | null>(null);
 
   const readJob = useCallback(async () => {
     const response = await fetch(`/api/lesson-jobs/${encodeURIComponent(jobId)}`, { cache: "no-store" });
@@ -64,14 +65,23 @@ export function LessonGenerationClient({ jobId }: { jobId: string }) {
     return () => window.clearInterval(timer);
   }, []);
 
+  useEffect(() => () => {
+    if (navigationTimerRef.current !== null) window.clearTimeout(navigationTimerRef.current);
+  }, []);
+
   useEffect(() => {
     if (job?.status !== "complete" || !job.lessonId || navigationStartedRef.current) return;
     navigationStartedRef.current = true;
     const destination = `/lesson/${encodeURIComponent(job.lessonId)}`;
     router.prefetch(destination);
     setExperiencePhase("episode-ready");
-    const timer = window.setTimeout(() => router.replace(destination), reducedMotion ? 180 : 900);
-    return () => window.clearTimeout(timer);
+    // Keep this timer alive across the episode-ready context rerender. Returning
+    // an effect cleanup here could cancel the navigation while the ref below
+    // prevented the effect from scheduling it again.
+    navigationTimerRef.current = window.setTimeout(() => {
+      navigationTimerRef.current = null;
+      router.replace(destination);
+    }, reducedMotion ? 180 : 900);
   }, [job, reducedMotion, router, setExperiencePhase]);
 
   async function retryGeneration() {

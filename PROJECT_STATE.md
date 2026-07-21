@@ -17,7 +17,7 @@ Last updated: 2026-07-21
 
 - Derivative-first visual lesson from English pasted input, with an explicit unsupported-scope response outside the reviewed rule registry
 - Versioned `LessonSpecV1/V2` plus separately persisted `LessonStoryState` and `LessonLearnerState`
-- Two fully offline seeded Manim lessons: instantaneous change and Chain Rule Mission. Each has five committed MP4 segments, captions/transcripts, replay, and reduced-motion SVG fallback; the instantaneous-change lesson also includes committed ElevenLabs narration
+- Two fully offline seeded Manim lessons: instantaneous change and Chain Rule Mission. Each has five committed MP4 segments, ElevenLabs narration, captions/transcripts, replay, and reduced-motion SVG fallback
 - Exactly two diagnostic pauses with direct answer submission and deterministic remediation selection
 - Dynamic power, sum, product, quotient, `sin`/`cos`/`exp`/`ln`, and one-layer chain-rule lessons through a strict 30-node expression AST
 - Four rule-specific practice steps with exact equivalence, misconception codes, second-error remediation, and a required smaller repair check

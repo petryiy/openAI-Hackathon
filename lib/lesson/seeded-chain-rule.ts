@@ -70,7 +70,7 @@ export const seededChainRuleLesson = LessonSpecV2Schema.parse({
     segments: segments.map((segment) => ({
       segmentId: segment.id,
       videoUrl: `/lesson-assets/chain-rule-seed/${segment.id}.mp4`,
-      audioUrl: null,
+      audioUrl: `/lesson-assets/chain-rule-seed/${segment.id}.mp3`,
       posterUrl: `/lesson-assets/chain-rule-seed/${segment.id}.png`,
       captionsUrl: `/lesson-assets/chain-rule-seed/${segment.id}.vtt`,
       durationMs: segment.durationMs,
