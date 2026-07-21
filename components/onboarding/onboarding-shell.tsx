@@ -109,9 +109,11 @@ export function OnboardingShell({ children }: { children: ReactNode }) {
   const startJourney = useCallback(() => {
     if (phase !== "idle") return;
     setPhase("entering");
+    // Push once the veil fully covers the viewport (~620ms) so the expensive
+    // /create mount happens behind it instead of during the reveal.
     timerRef.current = setTimeout(() => {
       startTransition(() => router.push("/create"));
-    }, reducedMotion ? 160 : 1000);
+    }, reducedMotion ? 160 : 650);
   }, [phase, reducedMotion, router]);
 
   const value = useMemo(

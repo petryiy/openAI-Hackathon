@@ -32,17 +32,19 @@
 }
 
 .onboarding-content { position: relative; z-index: 8; min-height: 100svh; }
-.onboarding-canvas { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.onboarding-canvas { position: absolute; inset: 0; z-index: 3; pointer-events: none; transition: opacity .8s ease; }
 .onboarding-canvas canvas { display: block; }
 .onboarding-transition-veil {
   position: fixed; inset: 0; z-index: 20; pointer-events: none; opacity: 0;
   background:
-    radial-gradient(circle at 57% 49%, rgba(244,247,255,.98) 0 2%, rgba(120,243,255,.9) 7%, rgba(138,108,255,.52) 19%, rgba(5,7,13,.96) 58%),
+    radial-gradient(circle at 57% 49%, rgba(244,247,255,.98) 0 14%, rgba(150,245,255,.96) 34%, rgba(138,108,255,.62) 52%, rgba(8,12,22,.97) 78%),
     #05070d;
-  transform: scale(.7); will-change: opacity, transform;
+  transform: scale(.6); will-change: opacity, transform;
 }
 .onboarding-shell[data-phase="entering"] .onboarding-transition-veil {
-  animation: portal-enter-veil 1s cubic-bezier(.45,0,.18,1) both;
+  /* Covers the viewport by ~26% (0.62s), then drifts while fully opaque so the
+     compositor keeps motion alive even if the /create mount blocks the main thread. */
+  animation: portal-enter-veil 2.4s cubic-bezier(.45,0,.18,1) both;
 }
 .onboarding-shell[data-phase="create"] .onboarding-transition-veil {
   animation: portal-exit-veil .46s cubic-bezier(.16,1,.3,1) both;
@@ -80,7 +82,7 @@
   mix-blend-mode: soft-light;
 }
 
-.portal-static { position: absolute; width: 390px; height: 390px; right: 12%; top: 50%; transform: translateY(-50%); opacity: .4; }
+.portal-static { position: absolute; width: 390px; height: 390px; right: 12%; top: 50%; transform: translateY(-50%); opacity: .4; transition: opacity .7s ease, width .7s ease, height .7s ease, right .7s ease; }
 .portal-static__ring { position: absolute; inset: 9%; border: 1px solid rgba(120,243,255,.24); border-radius: 50%; }
 .portal-static__ring--one { transform: rotateX(68deg) rotateZ(18deg); }
 .portal-static__ring--two { inset: 20%; border-color: rgba(138,108,255,.25); transform: rotateY(66deg) rotateZ(-24deg); }
@@ -229,7 +231,7 @@
     radial-gradient(circle at 60% 47%, rgba(120,243,255,.07), transparent 25%);
 }
 .onboarding-shell[data-page="create"] .onboarding-atmosphere::after { opacity: .55; }
-.onboarding-shell[data-page="create"] .onboarding-canvas { opacity: .42; transition: opacity .8s ease; }
+.onboarding-shell[data-page="create"] .onboarding-canvas { opacity: .42; }
 .onboarding-shell[data-page="create"] .portal-static { width: 470px; height: 470px; right: 25%; opacity: .18; }
 .landing-cursor-enabled .onboarding-create,
 .landing-cursor-enabled .onboarding-create button { cursor: none; }
@@ -251,7 +253,7 @@
   transition: opacity .55s ease, transform .8s cubic-bezier(.16,1,.3,1);
 }
 .episode-forge[data-genre="detective"] { --forge-accent: #a687ff; }
-.question-chamber { position: relative; z-index: 4; min-width: 0; animation: forge-assemble .85s cubic-bezier(.16,1,.3,1) both; }
+.question-chamber { position: relative; z-index: 4; min-width: 0; animation: forge-assemble .6s cubic-bezier(.16,1,.3,1) both; }
 .forge-intro { max-width: 760px; }
 .forge-eyebrow { margin: 0 0 13px; display: flex; align-items: center; gap: 10px; color: #7d899f; font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: .49rem; font-weight: 700; letter-spacing: .18em; }
 .forge-eyebrow::after { content: ""; width: 46px; height: 1px; background: linear-gradient(90deg,var(--forge-accent),transparent); }
@@ -303,7 +305,7 @@
 .demo-signal__visual--orbit::before { content: ""; position: absolute; left: 3px; right: 3px; bottom: 7px; height: 11px; border-top: 1px solid var(--portal-cyan); border-radius: 50%; transform: rotate(-14deg); }.demo-signal__visual--orbit i { position: absolute; width: 4px; height: 4px; border-radius: 50%; background: var(--portal-cyan); }.demo-signal__visual--orbit i:first-child { left: 6px; bottom: 8px; }.demo-signal__visual--orbit i:last-child { right: 6px; top: 8px; box-shadow: 0 0 8px var(--portal-cyan); }
 .demo-signal__visual--evidence i { position: absolute; width: 5px; height: 5px; border: 1px solid #a687ff; border-radius: 50%; }.demo-signal__visual--evidence i:nth-child(1) { left: 5px; top: 7px; }.demo-signal__visual--evidence i:nth-child(2) { right: 5px; top: 10px; }.demo-signal__visual--evidence i:nth-child(3) { left: 13px; bottom: 5px; background: #a687ff; box-shadow: 0 0 8px #a687ff; }
 
-.world-parameters { position: relative; z-index: 5; min-width: 0; padding: clamp(18px,2.4vh,27px); border: 1px solid rgba(176,219,241,.13); background: linear-gradient(155deg,rgba(8,15,27,.78),rgba(5,9,18,.67)); box-shadow: 0 32px 110px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.025); backdrop-filter: blur(22px); animation: forge-assemble .9s .1s cubic-bezier(.16,1,.3,1) both; }
+.world-parameters { position: relative; z-index: 5; min-width: 0; padding: clamp(18px,2.4vh,27px); border: 1px solid rgba(176,219,241,.13); background: linear-gradient(155deg,rgba(8,15,27,.78),rgba(5,9,18,.67)); box-shadow: 0 32px 110px rgba(0,0,0,.32),inset 0 1px rgba(255,255,255,.025); backdrop-filter: blur(22px); animation: forge-assemble .65s .08s cubic-bezier(.16,1,.3,1) both; }
 .world-parameters::before,.world-parameters::after { content: ""; position: absolute; width: 36px; height: 1px; background: var(--forge-accent); opacity: .5; }.world-parameters::before { left: -1px; top: -1px; }.world-parameters::after { right: -1px; bottom: -1px; }
 .world-parameters__header { padding-bottom: 15px; display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; border-bottom: 1px solid rgba(196,226,243,.09); }
 .world-parameters__header span { color: #59677d; font-family: ui-monospace,SFMono-Regular,Menlo,monospace; font-size: .4rem; letter-spacing: .16em; }.world-parameters__header h2 { margin: 5px 0 0; font-family: "Arial Narrow","Avenir Next Condensed",sans-serif; font-size: 1.45rem; font-weight: 650; letter-spacing: -.035em; text-transform: uppercase; }
@@ -355,9 +357,9 @@
 @keyframes boot-orbit-three { to { transform: rotate(360deg); } }
 @keyframes boot-core { to { transform: rotate(105deg) scale(1.15); filter: brightness(1.25); } }
 @keyframes boot-progress { from { transform: translateX(-110%); } to { transform: translateX(350%); } }
-@keyframes portal-enter-veil { 0%,45% { opacity: 0; transform: scale(.7); } 78% { opacity: .32; } 100% { opacity: 1; transform: scale(1.06); } }
-@keyframes portal-exit-veil { from { opacity: 1; transform: scale(1.06); } to { opacity: 0; transform: scale(1.12); } }
-@keyframes forge-assemble { from { opacity: 0; transform: translateY(18px) scale(.99); } }
+@keyframes portal-enter-veil { 0% { opacity: 0; transform: scale(.6); } 12% { opacity: .28; } 26% { opacity: 1; transform: scale(2.1); } 100% { opacity: 1; transform: scale(3.2); } }
+@keyframes portal-exit-veil { from { opacity: 1; transform: scale(2.4); } to { opacity: 0; transform: scale(3); } }
+@keyframes forge-assemble { from { opacity: 0; transform: translateY(12px); } }
 @keyframes source-scan { 0%,100% { top: 0; opacity: 0; } 14%,82% { opacity: .5; } 72% { top: 100%; } }
 @keyframes demo-pulse { 40% { border-color: var(--forge-accent); box-shadow: 0 0 30px color-mix(in srgb,var(--forge-accent) 18%,transparent); } }
 @keyframes forge-ring { to { transform: translate(-50%,-50%) rotate(380deg); } }
