@@ -93,7 +93,7 @@ pnpm build
 
 Current verified baseline:
 
-- 58 tests pass;
+- 61 tests pass;
 - TypeScript passes with strict mode;
 - ESLint passes;
 - Next.js production build succeeds;
@@ -101,6 +101,7 @@ Current verified baseline:
 - full wrong diagnostic → rule-specific remediation → repeated practice error → required micro-check → transfer → recap path passes;
 - unsupported topics without a key reach a clear, recoverable pause;
 - the live chain-rule acceptance lesson completed through OpenAI, ElevenLabs, independent symbolic verification, and five Manim renders in 84 seconds of teaching media.
+- the same chain-rule input publishes with deterministic SVG assets when `MANIM_RENDERER_URL` is configured but the worker is offline.
 
 ## Primary demo flow
 

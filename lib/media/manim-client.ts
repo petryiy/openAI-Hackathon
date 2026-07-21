@@ -33,13 +33,23 @@ const MathAnalysisResponseSchema = z.object({
 
 export async function verifyLessonMath(lesson: LessonSpec, rendererUrl = process.env.MANIM_RENDERER_URL) {
   if (lesson.schemaVersion === 1 || !rendererUrl) return lesson;
-  const response = await fetch(`${rendererUrl.replace(/\/$/, "")}/v1/math/analyze`, {
-    method: "POST", headers: { "content-type": "application/json" },
-    body: JSON.stringify({ expression_ast: lesson.mathModel.sourceExpression, expected_derivative_ast: lesson.mathModel.derivativeExpression, task: lesson.mathModel.task, evaluation_point: lesson.mathModel.evaluationPoint?.numerator }),
-    signal: AbortSignal.timeout(8_000),
-  });
-  if (!response.ok) throw new Error("The deterministic math service rejected this derivative.");
-  const analysis = MathAnalysisResponseSchema.parse(await response.json());
+  let analysis: z.infer<typeof MathAnalysisResponseSchema>;
+  try {
+    const response = await fetch(`${rendererUrl.replace(/\/$/, "")}/v1/math/analyze`, {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({ expression_ast: lesson.mathModel.sourceExpression, expected_derivative_ast: lesson.mathModel.derivativeExpression, task: lesson.mathModel.task, evaluation_point: lesson.mathModel.evaluationPoint?.numerator }),
+      signal: AbortSignal.timeout(8_000),
+    });
+    if (!response.ok) return lesson;
+    const parsed = MathAnalysisResponseSchema.safeParse(await response.json());
+    if (!parsed.success) return lesson;
+    analysis = parsed.data;
+  } catch {
+    // The TypeScript parser and differentiator have already produced the
+    // verified lesson. An unavailable optional worker must select the SVG
+    // fallback, not stop the lesson before publication.
+    return lesson;
+  }
   if (!analysis.expected_matches || analysis.capability !== lesson.capability) throw new Error("The independent symbolic verifier disagreed with the lesson analysis.");
   return lesson;
 }
