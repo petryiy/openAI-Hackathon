@@ -7,15 +7,12 @@ import {
   type EpisodeLevel, getSignalState, isPdfReference, LEVELS, MAX_SOURCE_LENGTH,
 } from "@/lib/create/episode-source";
 import { DERIVATIVE_SAMPLE } from "@/lib/lesson/constants";
-import { LESSON_PIPELINE_STAGES, type LessonJob } from "@/lib/lesson/jobs";
 
 const SIGNAL_LABELS = {
   awaiting: "AWAITING SOURCE",
   incomplete: "SIGNAL INCOMPLETE",
   ready: "READY TO COMPILE",
 } as const;
-
-const wait = (duration: number) => new Promise((resolve) => setTimeout(resolve, duration));
 
 export function CreateEpisodeForm() {
   const router = useRouter();
@@ -29,7 +26,6 @@ export function CreateEpisodeForm() {
   const [activeSample, setActiveSample] = useState<"moonbase" | "detective" | null>(null);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [generationStage, setGenerationStage] = useState("");
   const signalState = getSignalState(sourceInput);
   const ready = signalState === "ready";
 
@@ -66,8 +62,6 @@ export function CreateEpisodeForm() {
     if (!ready || submitting) return;
     setError("");
     setSubmitting(true);
-    setGenerationStage(LESSON_PIPELINE_STAGES[0]);
-    const animationStarted = performance.now();
     try {
       const response = await fetch("/api/lessons", {
         method: "POST",
@@ -76,14 +70,10 @@ export function CreateEpisodeForm() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error?.message ?? "Could not start generation.");
-      const job = await observeLessonJob(data.jobId, setGenerationStage);
-      const minimumTransition = reducedMotion ? 160 : 1050;
-      await wait(Math.max(0, minimumTransition - (performance.now() - animationStarted)));
-      router.push(`/lesson/${encodeURIComponent(job.lessonId!)}`);
+      router.push(`/generate?lessonJobId=${encodeURIComponent(data.jobId)}`);
     } catch (caught) {
       setError((caught as Error).message);
       setSubmitting(false);
-      setGenerationStage("");
     }
   }
 
@@ -203,7 +193,7 @@ export function CreateEpisodeForm() {
         <div className="forge-launch">
           <div className="forge-launch__rail" aria-hidden="true"><i /><i /><i /></div>
           <button type="submit" disabled={!ready || submitting} data-cursor="active" className="forge-launch__button">
-            <span><small>{submitting ? generationStage || "COMPILING SOURCE" : error ? "SYSTEM RECOVERED" : ready ? "DIRECTOR READY" : "SOURCE REQUIRED"}</small>
+            <span><small>{submitting ? "OPENING VISUAL PIPELINE" : error ? "SYSTEM RECOVERED" : ready ? "DIRECTOR READY" : "SOURCE REQUIRED"}</small>
               <strong>{error ? "Try again" : "Generate visual lesson"}</strong></span><i aria-hidden="true"><b>→</b></i>
           </button>
           <p>CMD / CTRL + ENTER TO LAUNCH</p>
@@ -215,18 +205,4 @@ export function CreateEpisodeForm() {
       </div>
     </form>
   );
-}
-
-async function observeLessonJob(jobId: string, onStage: (stage: string) => void): Promise<LessonJob> {
-  const deadline = Date.now() + 180_000;
-  while (Date.now() < deadline) {
-    const response = await fetch(`/api/lesson-jobs/${encodeURIComponent(jobId)}`, { cache: "no-store" });
-    if (!response.ok) throw new Error("The lesson job is temporarily unavailable. Please retry.");
-    const job = await response.json() as LessonJob;
-    onStage(`${LESSON_PIPELINE_STAGES[job.stageIndex]} · ${Math.round(job.progress)}%`);
-    if (job.status === "complete" && job.lessonId) return job;
-    if (job.status === "error") throw new Error(job.error?.message ?? "Lesson generation failed. Please retry.");
-    await wait(500);
-  }
-  throw new Error("Lesson rendering timed out. Retry or use the seeded derivative example.");
 }

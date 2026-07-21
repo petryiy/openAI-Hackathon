@@ -14,6 +14,7 @@ Last updated: 2026-07-20
 - Twenty-one allowlisted Manim 0.20.1 templates plus a SymPy verification endpoint in an isolated Docker service, content-addressed caching, strict AST input, stable posters, and responsive deterministic SVG fallback
 - OpenAI is limited to formula-free English story hooks and transition bridges; ElevenLabs George narration drives measured segment timing
 - New lesson, job, attempt, transfer, and rendered-asset APIs; the previous episode routes remain as a legacy path
+- Dedicated visual lesson loading page observes all six server-owned stages, survives refresh through the job URL, and hands off automatically to the published lesson
 - 61 tests passing, strict TypeScript passing, Next.js production build passing, renderer container smoke-tested, renderer-offline SVG publication smoke-tested, and desktop plus 390×844 browser QA completed
 
 ## Completed baseline

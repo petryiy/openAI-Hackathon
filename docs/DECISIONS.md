@@ -10,7 +10,7 @@ The primary calculus flow uses ElevenLabs `eleven_multilingual_v2` with the revi
 
 ## 2026-07-20 — Make the derivative lesson the primary learning loop
 
-The default create flow now creates a lesson job, observes its read-only status, and opens a validated segmented `LessonSpec` instead of treating dialogue autoplay as the teaching mechanism. Generation runs in a server-owned post-response task; polling never triggers work. The first vertical slice supports the derivative as instantaneous change, exactly two direct-submit diagnostic pauses, four deterministically graded difference-quotient steps, targeted remediation, and one unassisted transfer task. The existing episode runtime remains available only as a legacy compatibility path.
+The default create flow now creates a lesson job, immediately enters a dedicated `/generate?lessonJobId=...` loading page, observes its read-only status there, and opens a validated segmented `LessonSpec` instead of treating dialogue autoplay as the teaching mechanism. Generation runs in a server-owned post-response task; polling never triggers work. The loading URL preserves progress across refresh and displays the six persisted lesson stages before automatic handoff. The first vertical slice supports the derivative as instantaneous change, exactly two direct-submit diagnostic pauses, four deterministically graded difference-quotient steps, targeted remediation, and one unassisted transfer task. The existing episode runtime remains available only as a legacy compatibility path.
 
 ## 2026-07-20 — Keep mathematical truth and executable rendering outside the model boundary
 
