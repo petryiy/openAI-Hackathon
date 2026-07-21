@@ -63,7 +63,7 @@ export function LandingPage() {
             <strong>Step inside it.</strong>
           </h1>
           <p className="landing-description">
-            Turn a difficult derivative into a visual mission that adapts when your reasoning changes.
+            Turn any STEM question into a visual lesson that adapts when your reasoning changes.
           </p>
 
           <div className="landing-action-row">

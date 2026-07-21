@@ -193,7 +193,7 @@ export function CreateEpisodeForm() {
           <div className="world-selector">
             <button type="button" aria-pressed="true" disabled>
               <span className="world-card__visual world-card__visual--scifi" aria-hidden="true"><i /><i /><i /></span>
-              <span className="world-card__copy"><strong>VISUAL CALCULUS LAB</strong><small>Story motivates. Deterministic visuals explain.</small></span><b>01</b>
+              <span className="world-card__copy"><strong>VISUAL STEM LAB</strong><small>Story motivates. Deterministic visuals explain.</small></span><b>01</b>
             </button>
           </div>
         </fieldset>

@@ -217,7 +217,6 @@ export function GenerationClient() {
               <button type="button" onClick={retryGeneration} disabled={retrying}>{retrying ? "RESTARTING…" : "TRY AGAIN"}</button>
             ) : null}
             <Link href="/create">EDIT SOURCE</Link>
-            <Link href="/episode/moonbase-last-shot">PLAY OFFLINE DEMO</Link>
           </div>
         </div>
       ) : message ? <p className="director-network-note" role="status">{message} Reconnecting…</p> : null}

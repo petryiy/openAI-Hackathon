@@ -38,7 +38,7 @@ export function MissionWindow({ launching = false }: { launching?: boolean }) {
       onPointerMove={moveLight}
       onPointerLeave={resetLight}
       role="img"
-      aria-label="A capsule trajectory crossing a lunar crater from the Moonbase Last Shot episode"
+      aria-label="A capsule trajectory crossing a lunar crater"
     >
       <div className="mission-window__glow" aria-hidden="true" />
       <div className="mission-window__stars mission-window__stars--far" aria-hidden="true" />

@@ -101,7 +101,7 @@ export function LessonGenerationClient({ jobId }: { jobId: string }) {
     <section className={`director-pipeline ${ready ? "is-ready" : ""} ${failed ? "is-failed" : ""}`} aria-live="polite">
       <header className="director-pipeline__header">
         <Link href="/" className="director-pipeline__brand">AHA</Link>
-        <span>CALCULUS LESSON · VISUAL PIPELINE</span>
+        <span>STEM LESSON · VISUAL PIPELINE</span>
       </header>
 
       <div className="director-pipeline__copy">
